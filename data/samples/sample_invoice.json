@@ -1,0 +1,75 @@
+{
+  "documentType": "invoice",
+  "documentId": "INV-2026-001",
+  "tenantId": "tenant-acme",
+  "data": {
+    "invoiceNumber": "INV-2026-001",
+    "invoiceDate": "2026-10-16",
+    "dueDate": "2026-11-16",
+    "supplier": {
+      "name": "Acme Industrial Technologies Pvt Ltd",
+      "addressLine1": "Plot 102, Sector 8, MIDC",
+      "addressLine2": "Industrial Area",
+      "city: ": "Navi Mumbai",
+      "city": "Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400705",
+      "gstin": "27AABCA1234F1Z6",
+      "pan": "AABCA1234F",
+      "contactEmail": "accounts@acmeindustrial.in",
+      "contactPhone": "+91 22 2789 1234"
+    },
+    "customer": {
+      "name": "Bharat Heavy Manufacturing Ltd",
+      "addressLine1": "Survey 45, Baddi Industrial Estate",
+      "city": "Solan",
+      "state": "Himachal Pradesh",
+      "pincode": "173205",
+      "gstin": "02BBBBB1111B2Z4",
+      "pan": "BBBBB1111B"
+    },
+    "placeOfSupply": "Himachal Pradesh (02)",
+    "reverseCharge": false,
+    "currency": "INR",
+    "items": [
+      {
+        "description": "High Precision CNC Lathe Tool Holder ISO 40",
+        "hsnSacCode": "8207",
+        "quantity": 10,
+        "unit": "PCS",
+        "unitPrice": 4500.0,
+        "taxableAmount": 45000.0,
+        "igstRate": 18.0,
+        "igstAmount": 8100.0,
+        "totalAmount": 53100.0
+      },
+      {
+        "description": "Tungsten Carbide Milling Inserts (Pack of 10)",
+        "hsnSacCode": "8209",
+        "quantity": 5,
+        "unit": "PACK",
+        "unitPrice": 2200.0,
+        "taxableAmount": 11000.0,
+        "igstRate": 18.0,
+        "igstAmount": 1980.0,
+        "totalAmount": 12980.0
+      }
+    ],
+    "subtotal": 56000.0,
+    "totalIgst": 10080.0,
+    "grandTotal": 66080.0,
+    "grandTotalInWords": "Sixty Six Thousand Eighty Rupees Only",
+    "bankDetails": {
+      "bankName": "State Bank of India",
+      "accountNumber": "30012345678",
+      "ifscCode": "SBIN0001234",
+      "branchName": "Vashi Industrial Branch"
+    },
+    "termsAndConditions": "1. Interest @ 18% per annum will be charged if payment is delayed beyond due date.\n2. Subject to Navi Mumbai jurisdiction."
+  },
+  "options": {
+    "format": "A4",
+    "orientation": "portrait",
+    "preferSync": true
+  }
+}

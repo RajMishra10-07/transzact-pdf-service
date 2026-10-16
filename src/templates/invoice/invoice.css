@@ -1,0 +1,206 @@
+@page {
+  size: A4 portrait;
+  margin: 12mm 10mm 15mm 10mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1a202c;
+  background-color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.header-table {
+  width: 100%;
+  border-bottom: 2px solid #2b6cb0;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.company-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2b6cb0;
+  letter-spacing: -0.5px;
+}
+
+.doc-type-badge {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.meta-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.meta-table td {
+  padding: 2px 4px;
+}
+
+/* Parties Section */
+.parties-grid {
+  width: 100%;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  border-collapse: collapse;
+}
+
+.party-box {
+  width: 50%;
+  vertical-align: top;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.party-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a5568;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.party-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: #1a202c;
+  margin-bottom: 2px;
+}
+
+/* Items Table */
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 16px;
+  page-break-inside: auto;
+}
+
+.items-table thead {
+  display: table-header-group;
+}
+
+.items-table tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
+
+.items-table th {
+  background-color: #f7fafc;
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 6px 4px;
+  border-top: 1px solid #cbd5e0;
+  border-bottom: 2px solid #cbd5e0;
+  border-right: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.items-table th:last-child {
+  border-right: none;
+}
+
+.items-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #edf2f7;
+  font-size: 10px;
+  word-wrap: break-word;
+}
+
+.items-table td:last-child {
+  border-right: none;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Totals Summary */
+.summary-container {
+  width: 100%;
+  page-break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+.summary-table {
+  width: 45%;
+  margin-left: auto;
+  border-collapse: collapse;
+}
+
+.summary-table td {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.summary-table .grand-total-row {
+  border-top: 2px solid #2b6cb0;
+  border-bottom: 2px solid #2b6cb0;
+  font-weight: 700;
+  font-size: 13px;
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+}
+
+/* Footer / Bank Details */
+.footer-section {
+  width: 100%;
+  page-break-inside: avoid;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+  font-size: 10px;
+  color: #4a5568;
+}
+
+.bank-details {
+  border: 1px dashed #cbd5e0;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.signature-box {
+  text-align: right;
+  margin-top: 24px;
+}
+
+.signature-line {
+  display: inline-block;
+  width: 180px;
+  border-top: 1px solid #4a5568;
+  margin-top: 35px;
+  text-align: center;
+  font-size: 10px;
+  color: #718096;
+}

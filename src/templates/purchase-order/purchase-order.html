@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Purchase Order - {{poNumber}}</title>
+  <style>
+    {{{inlineCss}}}
+  </style>
+</head>
+<body>
+  <div class="po-container">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 60%; vertical-align: top;">
+          <div class="buyer-title">{{buyer.name}}</div>
+          {{#if buyer.gstin}}<div style="margin-top: 4px;"><strong>GSTIN:</strong> {{buyer.gstin}}</div>{{/if}}
+          {{#if buyer.pan}}<div><strong>PAN:</strong> {{buyer.pan}}</div>{{/if}}
+          <div style="color: #718096; margin-top: 2px;">{{buyer.addressLine1}}{{#if buyer.addressLine2}}, {{buyer.addressLine2}}{{/if}}, {{buyer.city}}, {{buyer.state}} - {{buyer.pincode}}</div>
+        </td>
+        <td style="width: 40%; vertical-align: top;">
+          <div class="doc-type-badge">PURCHASE ORDER</div>
+          <table class="meta-table">
+            <tr>
+              <td style="font-weight: 700; text-align: right;">PO Number:</td>
+              <td style="text-align: right;">{{poNumber}}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">PO Date:</td>
+              <td style="text-align: right;">{{formatDate poDate}}</td>
+            </tr>
+            {{#if deliveryDate}}
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Expected Delivery:</td>
+              <td style="text-align: right;">{{formatDate deliveryDate}}</td>
+            </tr>
+            {{/if}}
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Parties Grid -->
+    <table class="parties-grid">
+      <tr>
+        <td class="party-box">
+          <div class="party-heading">Vendor / Supplier</div>
+          <div class="party-name">{{vendor.name}}</div>
+          <div>{{vendor.addressLine1}}{{#if vendor.addressLine2}}, {{vendor.addressLine2}}{{/if}}</div>
+          <div>{{vendor.city}}, {{vendor.state}} - {{vendor.pincode}}</div>
+          {{#if vendor.gstin}}<div style="margin-top: 4px;"><strong>GSTIN:</strong> {{vendor.gstin}}</div>{{/if}}
+          {{#if vendor.contactPhone}}<div><strong>Phone:</strong> {{vendor.contactPhone}}</div>{{/if}}
+        </td>
+        <td class="party-box">
+          <div class="party-heading">Shipping Address</div>
+          <div class="party-name">{{shippingAddress.name}}</div>
+          <div>{{shippingAddress.addressLine1}}{{#if shippingAddress.addressLine2}}, {{shippingAddress.addressLine2}}{{/if}}</div>
+          <div>{{shippingAddress.city}}, {{shippingAddress.state}} - {{shippingAddress.pincode}}</div>
+          {{#if shippingAddress.contactEmail}}<div><strong>Email:</strong> {{shippingAddress.contactEmail}}</div>{{/if}}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;" class="text-center">#</th>
+          <th style="width: 38%;">Item Description</th>
+          <th style="width: 12%;">HSN/SAC</th>
+          <th style="width: 10%;" class="text-right">Qty</th>
+          <th style="width: 15%;" class="text-right">Rate</th>
+          <th style="width: 20%;" class="text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each items}}
+        <tr>
+          <td class="text-center">{{addOne @index}}</td>
+          <td>{{this.description}}</td>
+          <td>{{this.hsnSacCode}}</td>
+          <td class="text-right">{{this.quantity}} {{this.unit}}</td>
+          <td class="text-right">{{formatCurrency this.unitPrice ../currency}}</td>
+          <td class="text-right" style="font-weight: 600;">{{formatCurrency this.totalAmount ../currency}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <!-- Totals Summary -->
+    <div class="summary-container">
+      <table class="summary-table">
+        <tr>
+          <td><strong>Subtotal:</strong></td>
+          <td class="text-right">{{formatCurrency subtotal currency}}</td>
+        </tr>
+        <tr>
+          <td>Total Tax:</td>
+          <td class="text-right">{{formatCurrency totalTax currency}}</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td>Grand Total:</td>
+          <td class="text-right">{{formatCurrency grandTotal currency}}</td>
+        </tr>
+      </table>
+    </div>
+
+    {{#if grandTotalInWords}}
+    <div style="margin-bottom: 12px; font-size: 11px; background-color: #f0fff4; padding: 6px 8px; border-left: 3px solid #2f855a;">
+      <strong>Amount in Words:</strong> {{grandTotalInWords}}
+    </div>
+    {{/if}}
+
+    <!-- Footer / Terms -->
+    <div class="footer-section">
+      <table style="width: 100%;">
+        <tr>
+          <td style="width: 60%; vertical-align: top; padding-right: 15px;">
+            {{#if paymentTerms}}
+            <div><strong>Payment Terms:</strong> {{paymentTerms}}</div>
+            {{/if}}
+            {{#if deliveryTerms}}
+            <div style="margin-top: 4px;"><strong>Delivery Terms:</strong> {{deliveryTerms}}</div>
+            {{/if}}
+            {{#if notes}}
+            <div style="margin-top: 6px;">
+              <strong>Special Instructions:</strong><br>
+              <span style="white-space: pre-line;">{{notes}}</span>
+            </div>
+            {{/if}}
+          </td>
+          <td style="width: 40%; vertical-align: top; text-align: right;">
+            <div style="font-weight: 700; color: #2d3748;">Authorized Buyer Signatory</div>
+            <div class="signature-box">
+              <div class="signature-line">{{buyer.name}}</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 6px;">
+        Generated via TranZact PDF Microservice.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

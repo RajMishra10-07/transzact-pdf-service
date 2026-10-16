@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tax Invoice - {{invoiceNumber}}</title>
+  <style>
+    {{{inlineCss}}}
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 60%; vertical-align: top;">
+          <div class="company-title">{{supplier.name}}</div>
+          {{#if supplier.gstin}}<div style="margin-top: 4px;"><strong>GSTIN:</strong> {{supplier.gstin}}</div>{{/if}}
+          {{#if supplier.pan}}<div><strong>PAN:</strong> {{supplier.pan}}</div>{{/if}}
+          <div style="color: #718096; margin-top: 2px;">{{supplier.addressLine1}}{{#if supplier.addressLine2}}, {{supplier.addressLine2}}{{/if}}, {{supplier.city}}, {{supplier.state}} - {{supplier.pincode}}</div>
+        </td>
+        <td style="width: 40%; vertical-align: top;">
+          <div class="doc-type-badge">TAX INVOICE</div>
+          <table class="meta-table">
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Invoice No:</td>
+              <td style="text-align: right;">{{invoiceNumber}}</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Invoice Date:</td>
+              <td style="text-align: right;">{{formatDate invoiceDate}}</td>
+            </tr>
+            {{#if dueDate}}
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Due Date:</td>
+              <td style="text-align: right;">{{formatDate dueDate}}</td>
+            </tr>
+            {{/if}}
+            {{#if placeOfSupply}}
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Place of Supply:</td>
+              <td style="text-align: right;">{{placeOfSupply}}</td>
+            </tr>
+            {{/if}}
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Parties Grid -->
+    <table class="parties-grid">
+      <tr>
+        <td class="party-box">
+          <div class="party-heading">Details of Receiver (Billed To)</div>
+          <div class="party-name">{{customer.name}}</div>
+          <div>{{customer.addressLine1}}{{#if customer.addressLine2}}, {{customer.addressLine2}}{{/if}}</div>
+          <div>{{customer.city}}, {{customer.state}} - {{customer.pincode}}</div>
+          {{#if customer.gstin}}<div style="margin-top: 4px;"><strong>GSTIN:</strong> {{customer.gstin}}</div>{{/if}}
+          {{#if customer.pan}}<div><strong>PAN:</strong> {{customer.pan}}</div>{{/if}}
+          {{#if customer.contactPhone}}<div><strong>Phone:</strong> {{customer.contactPhone}}</div>{{/if}}
+        </td>
+        <td class="party-box">
+          <div class="party-heading">Dispatch / Supplier Details</div>
+          <div class="party-name">{{supplier.name}}</div>
+          <div>{{supplier.addressLine1}}{{#if supplier.addressLine2}}, {{supplier.addressLine2}}{{/if}}</div>
+          <div>{{supplier.city}}, {{supplier.state}} - {{supplier.pincode}}</div>
+          {{#if supplier.contactEmail}}<div><strong>Email:</strong> {{supplier.contactEmail}}</div>{{/if}}
+          {{#if supplier.contactPhone}}<div><strong>Phone:</strong> {{supplier.contactPhone}}</div>{{/if}}
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;" class="text-center">#</th>
+          <th style="width: 32%;">Item Description</th>
+          <th style="width: 10%;">HSN/SAC</th>
+          <th style="width: 8%;" class="text-right">Qty</th>
+          <th style="width: 12%;" class="text-right">Unit Price</th>
+          <th style="width: 11%;" class="text-right">Taxable</th>
+          <th style="width: 10%;" class="text-right">GST</th>
+          <th style="width: 12%;" class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {{#each items}}
+        <tr>
+          <td class="text-center">{{addOne @index}}</td>
+          <td>{{this.description}}</td>
+          <td>{{this.hsnSacCode}}</td>
+          <td class="text-right">{{this.quantity}} {{this.unit}}</td>
+          <td class="text-right">{{formatCurrency this.unitPrice ../currency}}</td>
+          <td class="text-right">{{formatCurrency this.taxableAmount ../currency}}</td>
+          <td class="text-right">
+            {{#if this.cgstRate}}CGST: {{this.cgstRate}}%<br>{{/if}}
+            {{#if this.sgstRate}}SGST: {{this.sgstRate}}%<br>{{/if}}
+            {{#if this.igstRate}}IGST: {{this.igstRate}}%{{/if}}
+          </td>
+          <td class="text-right" style="font-weight: 600;">{{formatCurrency this.totalAmount ../currency}}</td>
+        </tr>
+        {{/each}}
+      </tbody>
+    </table>
+
+    <!-- Totals Summary -->
+    <div class="summary-container">
+      <table class="summary-table">
+        <tr>
+          <td><strong>Subtotal:</strong></td>
+          <td class="text-right">{{formatCurrency subtotal currency}}</td>
+        </tr>
+        {{#if totalDiscount}}
+        <tr>
+          <td>Discount:</td>
+          <td class="text-right">- {{formatCurrency totalDiscount currency}}</td>
+        </tr>
+        {{/if}}
+        {{#if totalCgst}}
+        <tr>
+          <td>Total CGST:</td>
+          <td class="text-right">{{formatCurrency totalCgst currency}}</td>
+        </tr>
+        {{/if}}
+        {{#if totalSgst}}
+        <tr>
+          <td>Total SGST:</td>
+          <td class="text-right">{{formatCurrency totalSgst currency}}</td>
+        </tr>
+        {{/if}}
+        {{#if totalIgst}}
+        <tr>
+          <td>Total IGST:</td>
+          <td class="text-right">{{formatCurrency totalIgst currency}}</td>
+        </tr>
+        {{/if}}
+        <tr class="grand-total-row">
+          <td>Grand Total:</td>
+          <td class="text-right">{{formatCurrency grandTotal currency}}</td>
+        </tr>
+      </table>
+    </div>
+
+    {{#if grandTotalInWords}}
+    <div style="margin-bottom: 12px; font-size: 11px; background-color: #f7fafc; padding: 6px 8px; border-left: 3px solid #2b6cb0;">
+      <strong>Amount in Words:</strong> {{grandTotalInWords}}
+    </div>
+    {{/if}}
+
+    <!-- Footer / Terms & Bank Details -->
+    <div class="footer-section">
+      <table style="width: 100%;">
+        <tr>
+          <td style="width: 60%; vertical-align: top; padding-right: 15px;">
+            {{#if bankDetails}}
+            <div class="bank-details">
+              <strong>Bank Details:</strong><br>
+              Bank: {{bankDetails.bankName}}<br>
+              A/C No: {{bankDetails.accountNumber}}<br>
+              IFSC: {{bankDetails.ifscCode}}{{#if bankDetails.branchName}} | Branch: {{bankDetails.branchName}}{{/if}}
+            </div>
+            {{/if}}
+            {{#if termsAndConditions}}
+            <div style="margin-top: 6px;">
+              <strong>Terms & Conditions:</strong><br>
+              <span style="white-space: pre-line;">{{termsAndConditions}}</span>
+            </div>
+            {{/if}}
+          </td>
+          <td style="width: 40%; vertical-align: top; text-align: right;">
+            <div style="font-weight: 700; color: #2d3748;">For {{supplier.name}}</div>
+            <div class="signature-box">
+              <div class="signature-line">Authorized Signatory</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 6px;">
+        This is a computer generated invoice. Generated via TranZact PDF Microservice.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

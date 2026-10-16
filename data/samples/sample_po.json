@@ -1,0 +1,65 @@
+{
+  "documentType": "purchase_order",
+  "documentId": "PO-2026-550",
+  "tenantId": "tenant-acme",
+  "data": {
+    "poNumber": "PO-2026-550",
+    "poDate": "2026-10-16",
+    "deliveryDate": "2026-10-31",
+    "buyer": {
+      "name": "Acme Industrial Technologies Pvt Ltd",
+      "addressLine1": "Plot 102, Sector 8, MIDC",
+      "city": "Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400705",
+      "gstin": "27AABCA1234F1Z6",
+      "pan": "AABCA1234F"
+    },
+    "vendor": {
+      "name": "Tata Special Steel Alloys Ltd",
+      "addressLine1": "Jamshedpur Works",
+      "city": "Jamshedpur",
+      "state": "Jharkhand",
+      "pincode": "831001",
+      "gstin": "20CCCCA5678C1Z2"
+    },
+    "shippingAddress": {
+      "name": "Acme Central Logistics Depot",
+      "addressLine1": "Bhiwandi Warehousing Hub, Building 4",
+      "city": "Bhiwandi",
+      "state": "Maharashtra",
+      "pincode": "421302",
+      "contactEmail": "logistics@acmeindustrial.in"
+    },
+    "billingAddress": {
+      "name": "Acme Industrial Technologies Pvt Ltd",
+      "addressLine1": "Plot 102, Sector 8, MIDC",
+      "city": "Navi Mumbai",
+      "state": "Maharashtra",
+      "pincode": "400705"
+    },
+    "currency": "INR",
+    "items": [
+      {
+        "description": "Cold Rolled Steel Coil Grade 304 (2.5mm thickness)",
+        "hsnSacCode": "7219",
+        "quantity": 1500,
+        "unit": "KGS",
+        "unitPrice": 185.0,
+        "taxableAmount": 277500.0,
+        "totalAmount": 327450.0
+      }
+    ],
+    "subtotal": 277500.0,
+    "totalTax": 49950.0,
+    "grandTotal": 327450.0,
+    "grandTotalInWords": "Three Lakh Twenty Seven Thousand Four Hundred Fifty Rupees Only",
+    "paymentTerms": "60 Days Net from date of Material Receipt & Inspection",
+    "deliveryTerms": "Door Delivery Freight Paid by Supplier"
+  },
+  "options": {
+    "format": "A4",
+    "orientation": "portrait",
+    "preferSync": true
+  }
+}

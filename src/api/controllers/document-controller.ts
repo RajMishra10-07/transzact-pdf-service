@@ -1,0 +1,128 @@
+import { Request, Response } from 'express';
+import { generateDocumentSchema } from '../schemas/document-schemas.js';
+import { documentService } from '../../services/document-service.js';
+import { integrityService } from '../../services/integrity-service.js';
+import { getStorageService } from '../../storage/storage-factory.js';
+import { ForbiddenError, NotFoundError } from '../../domain/errors.js';
+import { DocumentType } from '../../domain/document.js';
+
+export class DocumentController {
+  public static async generate(req: Request, res: Response): Promise<void> {
+    const validated = generateDocumentSchema.parse(req.body);
+
+    // Enforce tenant match if tenantId was extracted from headers
+    if (req.tenantId && req.tenantId !== validated.tenantId) {
+      throw new ForbiddenError('Tenant ID in header does not match tenant ID in request payload');
+    }
+
+    const result = await documentService.generateDocument(
+      validated,
+      (req.headers['x-user-id'] as string) || 'system'
+    );
+
+    if (result.isSync) {
+      res.status(200).json(result);
+    } else {
+      res.status(202).json(result);
+    }
+  }
+
+  public static async getStatus(req: Request, res: Response): Promise<void> {
+    const { documentId } = req.params;
+    const documentType = (req.query.documentType as DocumentType) || 'invoice';
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      throw new ForbiddenError('Tenant ID must be supplied via x-tenant-id header');
+    }
+
+    const doc = await documentService.getDocument(tenantId, documentType, documentId);
+    res.status(200).json({
+      documentId: doc.documentId,
+      tenantId: doc.tenantId,
+      documentType: doc.documentType,
+      status: 'completed',
+      fileSizeBytes: doc.fileSizeBytes,
+      sha256Checksum: doc.sha256Checksum,
+      templateVersion: doc.templateVersion,
+      createdAt: doc.createdAt,
+      downloadUrl: `/api/v1/documents/${doc.documentId}/download?documentType=${doc.documentType}&tenantId=${doc.tenantId}`,
+    });
+  }
+
+  public static async getJob(req: Request, res: Response): Promise<void> {
+    const { jobId } = req.params;
+    const job = await documentService.getJob(jobId);
+
+    if (!req.tenantId || req.tenantId !== job.tenantId) {
+      throw new ForbiddenError('Access to job belongs to a different tenant');
+    }
+
+    res.status(200).json(job);
+  }
+
+  public static async download(req: Request, res: Response): Promise<void> {
+    const { documentId } = req.params;
+    const documentType = (req.query.documentType as DocumentType) || 'invoice';
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      throw new ForbiddenError('Tenant ID must be supplied via x-tenant-id header');
+    }
+
+    const doc = await documentService.getDocument(tenantId, documentType, documentId);
+
+    // Verify SHA-256 integrity before serving
+    await integrityService.verifyDocumentIntegrity(
+      tenantId,
+      documentType,
+      documentId,
+      (req.headers['x-user-id'] as string) || 'download_client'
+    );
+
+    const storage = getStorageService();
+    const metadata = await storage.getMetadata(doc.storageKey);
+
+    // Record download audit
+    await integrityService.recordDownloadAudit(
+      documentId,
+      tenantId,
+      doc.sha256Checksum,
+      (req.headers['x-user-id'] as string) || 'client',
+      req.ip
+    );
+
+    // Handle HTTP Range header for resumable downloads
+    const rangeHeader = req.headers.range;
+    if (rangeHeader) {
+      const parts = rangeHeader.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : metadata.sizeBytes - 1;
+
+      if (start >= metadata.sizeBytes || end >= metadata.sizeBytes) {
+        res.status(416).setHeader('Content-Range', `bytes */${metadata.sizeBytes}`).end();
+        return;
+      }
+
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${metadata.sizeBytes}`);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Length', end - start + 1);
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `inline; filename="${documentType}_${documentId}.pdf"`);
+
+      const stream = await storage.getStream(doc.storageKey, { start, end });
+      stream.pipe(res);
+      return;
+    }
+
+    res.setHeader('Content-Type', 'application/pdf');
+    res.setHeader('Content-Length', metadata.sizeBytes);
+    res.setHeader('Content-Disposition', `attachment; filename="${documentType}_${documentId}.pdf"`);
+    res.setHeader('Accept-Ranges', 'bytes');
+    res.setHeader('X-Document-SHA256', doc.sha256Checksum);
+
+    const stream = await storage.getStream(doc.storageKey);
+    stream.pipe(res);
+  }
+}
