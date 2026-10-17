@@ -107,12 +107,39 @@ export class InMemoryQueueManager implements IQueueManager {
   public async addRenderJob(data: RenderJobData): Promise<string> {
     this.renderJobs.push(data);
     logger.info({ jobId: data.jobId, isLarge: data.isLargeDocument }, 'Enqueued render job (In-Memory)');
+
+    if (env.NODE_ENV !== 'test' && env.USE_IN_MEMORY_FALLBACK) {
+      setImmediate(async () => {
+        try {
+          const { processRenderJob } = await import('../workers/document-worker.js');
+          await processRenderJob(data);
+        } catch (err) {
+          logger.error({ err, jobId: data.jobId }, 'In-Memory render job execution error');
+        }
+      });
+    }
+
     return data.jobId;
   }
 
   public async addArchiveJob(data: ArchiveJobData): Promise<string> {
     this.archiveJobs.push(data);
     logger.info({ bulkJobId: data.bulkJobId }, 'Enqueued archive job (In-Memory)');
+
+    if (env.NODE_ENV !== 'test' && env.USE_IN_MEMORY_FALLBACK) {
+      setImmediate(async () => {
+        try {
+          const { archiveService } = await import('../services/archive-service.js');
+          const { bulkEmitter, bulkService } = await import('../services/bulk-service.js');
+          await archiveService.createArchive(data.bulkJobId, data.tenantId);
+          const snapshot = await bulkService.getBulkStatus(data.bulkJobId);
+          bulkEmitter.emit('progress', snapshot);
+        } catch (err) {
+          logger.error({ err, bulkJobId: data.bulkJobId }, 'In-Memory archive job execution error');
+        }
+      });
+    }
+
     return `archive_${data.bulkJobId}`;
   }
 

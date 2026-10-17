@@ -450,12 +450,15 @@
           </div>
 
           <!-- Action Buttons -->
-          <div class="card" style="display: flex; gap: 12px; align-items: center; justify-content: space-between;">
-            <div style="display: flex; gap: 12px; align-items: center;">
+          <div class="card" style="display: flex; gap: 12px; align-items: center; justify-content: space-between; flex-wrap: wrap;">
+            <div style="display: flex; gap: 14px; align-items: center; flex-wrap: wrap;">
               <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
                 <input type="checkbox" id="preferSync" checked>
                 <span>Prefer Synchronous (&lt; 4.5s)</span>
               </label>
+              <button class="btn btn-secondary btn-sm" onclick="switchTab('bulk'); syncBulkInput(100);" title="Generate up to 100 PDFs in one single request">
+                📦 Need up to 100 PDFs? Switch to Bulk Generation
+              </button>
             </div>
             <div style="display: flex; gap: 10px;">
               <button class="btn btn-secondary" id="btnHtmlPreview" onclick="viewTemplateHtml()">👁️ HTML Preview</button>
@@ -499,18 +502,60 @@
           Submit multi-document workloads to background queues. Monitor live progress via Server-Sent Events (SSE) and download streaming ZIP archives with HTTP Range support.
         </p>
 
-        <div class="form-row" style="max-width: 500px;">
-          <div class="form-group">
-            <label>Batch Size</label>
-            <select id="bulkSize">
-              <option value="3">3 Documents (Quick Test)</option>
-              <option value="5">5 Documents (Mixed Invoices & POs)</option>
-              <option value="10">10 Documents (Standard Batch)</option>
-              <option value="25">25 Documents (High Throughput)</option>
-            </select>
+        <!-- Bulk Batch Configuration (Up to 100 PDFs in One Request) -->
+        <div style="background: var(--bg); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
+            <div>
+              <strong style="font-size: 15px; color: var(--text);">Batch Configuration (Multiple Documents in One Request)</strong>
+              <div style="font-size: 12px; color: var(--text-muted); margin-top: 2px;">
+                Submit concurrent workloads up to the maximum limit of 100 PDFs per single API request.
+              </div>
+            </div>
+            <span class="badge badge-success" style="font-size: 12px; padding: 4px 10px;">Max Limit: 100 PDFs</span>
           </div>
-          <div class="form-group" style="justify-content: flex-end;">
-            <button class="btn btn-primary" onclick="launchBulkBatch()">🚀 Start Bulk Batch</button>
+
+          <div class="form-row" style="align-items: flex-end;">
+            <div class="form-group" style="flex: 2; min-width: 200px;">
+              <label>Select Preset or Count</label>
+              <select id="bulkSize" onchange="syncBulkInput(this.value)">
+                <option value="100" selected>100 Documents (Full 100 PDFs Batch - Maximum Allowed Limit)</option>
+                <option value="50">50 Documents (High Throughput Batch)</option>
+                <option value="25">25 Documents (Medium Batch)</option>
+                <option value="10">10 Documents (Standard Batch)</option>
+                <option value="5">5 Documents (Small Batch)</option>
+                <option value="3">3 Documents (Quick Test)</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="flex: 1; min-width: 120px;">
+              <label>Exact Count (1 - 100)</label>
+              <input type="number" id="bulkDocCount" min="1" max="100" value="100" oninput="clampBulkCount(this)">
+            </div>
+
+            <div class="form-group" style="flex: 1.5; min-width: 160px;">
+              <label>Document Types</label>
+              <select id="bulkDocMix">
+                <option value="mixed">50% Invoices / 50% POs</option>
+                <option value="invoice">100% Invoices Only</option>
+                <option value="purchase_order">100% Purchase Orders Only</option>
+              </select>
+            </div>
+
+            <div class="form-group" style="flex: 1.5; min-width: 150px;">
+              <button class="btn btn-primary" id="btnLaunchBulk" onclick="launchBulkBatch()" style="width: 100%; height: 38px; justify-content: center;">
+                🚀 Start Bulk Batch
+              </button>
+            </div>
+          </div>
+
+          <!-- Quick Launch Shortcuts -->
+          <div style="display: flex; gap: 8px; align-items: center; margin-top: 14px; flex-wrap: wrap;">
+            <span style="font-size: 12px; font-weight: 600; color: var(--text-muted);">Quick Batch Actions:</span>
+            <button class="btn btn-secondary btn-sm" onclick="quickLaunchBulk(100)">⚡ 100 PDFs (Full Limit)</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLaunchBulk(50)">📦 50 PDFs</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLaunchBulk(25)">📄 25 PDFs</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLaunchBulk(10)">📑 10 PDFs</button>
+            <button class="btn btn-secondary btn-sm" onclick="quickLaunchBulk(3)">🧪 3 PDFs</button>
           </div>
         </div>
 
@@ -969,37 +1014,108 @@
       }
     }
 
-    // --- Bulk Batch Processing ---
-    async function launchBulkBatch() {
-      const size = Number(document.getElementById('bulkSize').value);
+    // --- Bulk Batch Processing (Up to 100 PDFs in One Request) ---
+    function syncBulkInput(val) {
+      const num = Number(val);
+      if (!isNaN(num)) {
+        const clamped = Math.max(1, Math.min(100, num));
+        document.getElementById('bulkSize').value = clamped;
+        document.getElementById('bulkDocCount').value = clamped;
+      }
+    }
+
+    function clampBulkCount(input) {
+      let val = Number(input.value);
+      if (isNaN(val) || val < 1) val = 1;
+      if (val > 100) val = 100;
+      input.value = val;
+      const select = document.getElementById('bulkSize');
+      if (Array.from(select.options).some(o => Number(o.value) === val)) {
+        select.value = val;
+      }
+    }
+
+    function quickLaunchBulk(count) {
+      syncBulkInput(count);
+      launchBulkBatch(count);
+    }
+
+    async function launchBulkBatch(customCount) {
+      const inputEl = document.getElementById('bulkDocCount');
+      const selectEl = document.getElementById('bulkSize');
+      const mixEl = document.getElementById('bulkDocMix');
+
+      const rawCount = customCount || (inputEl ? Number(inputEl.value) : (selectEl ? Number(selectEl.value) : 100));
+      const size = Math.max(1, Math.min(100, isNaN(rawCount) ? 100 : rawCount));
+      const docMix = mixEl ? mixEl.value : 'mixed';
       const tenantId = 'tenant-acme';
-      
+
+      const btn = document.getElementById('btnLaunchBulk');
+      if (btn) {
+        btn.disabled = true;
+        btn.innerText = `⏳ Submitting ${size} PDFs...`;
+      }
+
       const documents = [];
       for (let i = 1; i <= size; i++) {
+        let docType = 'invoice';
+        if (docMix === 'purchase_order') {
+          docType = 'purchase_order';
+        } else if (docMix === 'mixed') {
+          docType = i % 2 === 0 ? 'purchase_order' : 'invoice';
+        }
+
+        const docId = docType === 'invoice' ? `INV-BULK-${String(i).padStart(3, '0')}` : `PO-BULK-${String(i).padStart(3, '0')}`;
+        const itemQty = (i % 10) + 1;
+        const unitPrice = 200 + (i * 10);
+        const taxable = itemQty * unitPrice;
+        const gstRate = 18;
+        const tax = taxable * 0.18;
+        const total = taxable + tax;
+
         documents.push({
-          documentType: i % 2 === 0 ? 'purchase_order' : 'invoice',
-          documentId: `DOC-BATCH-${100 + i}`,
+          documentType: docType,
+          documentId: docId,
           tenantId: tenantId,
           data: {
-            [i % 2 === 0 ? 'poNumber' : 'invoiceNumber']: `DOC-BATCH-${100 + i}`,
-            [i % 2 === 0 ? 'poDate' : 'invoiceDate']: '2026-10-16',
-            supplier: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
-            customer: { name: `Client #${i}`, addressLine1: 'Street 5', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
-            buyer: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
-            vendor: { name: `Vendor #${i}`, addressLine1: 'Street 5', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
-            shippingAddress: { name: 'Warehouse', addressLine1: 'Zone 2', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
-            billingAddress: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
-            items: [{ description: `Batch Item Product #${i}`, quantity: i, unit: 'PCS', unitPrice: 200, taxableAmount: i * 200, totalAmount: i * 236 }],
-            subtotal: i * 200,
-            totalTax: i * 36,
-            totalIgst: i * 36,
-            grandTotal: i * 236
+            [docType === 'invoice' ? 'invoiceNumber' : 'poNumber']: docId,
+            [docType === 'invoice' ? 'invoiceDate' : 'poDate']: '2026-10-17',
+            dueDate: '2026-11-17',
+            currency: 'INR',
+            supplier: { name: 'Acme Industrial Technologies Pvt Ltd', addressLine1: 'Plot 102, MIDC', city: 'Navi Mumbai', state: 'Maharashtra', pincode: '400705', gstin: '27AABCA1234F1Z6' },
+            customer: { name: `Client Enterprise #${i} Ltd`, addressLine1: `Industrial Park Sector ${i}`, city: 'Pune', state: 'Maharashtra', pincode: '411001', gstin: `27BBBBB${String(1000 + i).slice(-4)}B1Z5` },
+            buyer: { name: 'Acme Industrial Technologies Pvt Ltd', addressLine1: 'Plot 102, MIDC', city: 'Navi Mumbai', state: 'Maharashtra', pincode: '400705' },
+            vendor: { name: `Vendor Supplier #${i} Corp`, addressLine1: `Zone ${i}, Steel City`, city: 'Jamshedpur', state: 'Jharkhand', pincode: '831001' },
+            shippingAddress: { name: 'Central Logistics Depot', addressLine1: 'Plot 40, Cargo Hub', city: 'Bhiwandi', state: 'Maharashtra', pincode: '421302' },
+            billingAddress: { name: 'Acme Industrial Technologies Pvt Ltd', addressLine1: 'Plot 102, MIDC', city: 'Navi Mumbai', state: 'Maharashtra', pincode: '400705' },
+            items: [
+              {
+                description: docType === 'invoice' ? `Precision Component Part Grade-A #${i}` : `Structural Stainless Steel Pipe 304 #${i}`,
+                hsnSacCode: '8483',
+                quantity: itemQty,
+                unit: 'PCS',
+                unitPrice: unitPrice,
+                taxableAmount: taxable,
+                igstRate: gstRate,
+                igstAmount: tax,
+                totalAmount: total
+              }
+            ],
+            subtotal: taxable,
+            totalTax: tax,
+            totalIgst: tax,
+            grandTotal: total,
+            grandTotalInWords: `Rupees ${total.toFixed(2)} Only`,
+            bankDetails: { bankName: 'HDFC Bank', accountNumber: '50200012345678', ifscCode: 'HDFC0000123', branchName: 'MIDC Branch' },
+            termsAndConditions: 'Payment due within 30 days.'
           }
         });
       }
 
       document.getElementById('bulkProgressSection').style.display = 'block';
-      document.getElementById('sseLog').innerText = 'Submitting batch of ' + size + ' documents to /api/v1/documents/bulk...\\n';
+      document.getElementById('sseLog').innerText = `🚀 Submitting batch of ${size} documents to /api/v1/documents/bulk in ONE request...\\n`;
+      document.getElementById('btnBulkDownloadZip').style.display = 'none';
+      document.getElementById('btnBulkManifest').style.display = 'none';
 
       try {
         const res = await fetch('/api/v1/documents/bulk', {
@@ -1013,12 +1129,21 @@
         });
 
         const bulkJob = await res.json();
+        if (!res.ok) throw new Error(bulkJob.error?.message || 'Bulk creation failed');
+
         currentBulkJobId = bulkJob.bulkJobId;
         document.getElementById('bulkJobIdDisplay').innerText = 'Job ID: ' + currentBulkJobId;
+        document.getElementById('sseLog').innerText += `Batch accepted! Total: ${bulkJob.totalDocuments} documents. Estimated time: ${bulkJob.estimatedCompletionSeconds}s\\n`;
 
         startSseMonitoring(currentBulkJobId, tenantId);
       } catch (err) {
         alert('Failed to submit bulk batch: ' + err.message);
+        document.getElementById('sseLog').innerText += `❌ Error submitting batch: ${err.message}\\n`;
+      } finally {
+        if (btn) {
+          btn.disabled = false;
+          btn.innerText = '🚀 Start Bulk Batch';
+        }
       }
     }
 
