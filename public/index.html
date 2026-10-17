@@ -305,7 +305,7 @@
       <div id="serviceStatus" class="status-pill">
         <span class="status-dot"></span> <span id="statusText">Checking...</span>
       </div>
-      <button class="btn btn-secondary btn-sm" onclick="checkHealth()">🔄 Refresh</button>
+      <button class="btn btn-secondary btn-sm" id="btnHeaderRefresh" onclick="handleGlobalRefresh()">🔄 Refresh</button>
     </div>
   </header>
 
@@ -458,7 +458,7 @@
               </label>
             </div>
             <div style="display: flex; gap: 10px;">
-              <button class="btn btn-secondary" onclick="viewTemplateHtml()">👁️ HTML Preview</button>
+              <button class="btn btn-secondary" id="btnHtmlPreview" onclick="viewTemplateHtml()">👁️ HTML Preview</button>
               <button class="btn btn-primary" id="btnGenerate" onclick="generatePdf()">🚀 Generate PDF</button>
             </div>
           </div>
@@ -474,6 +474,8 @@
                 <span id="renderStatusBadge" class="badge badge-info" style="margin-left: 6px;">Ready</span>
               </div>
               <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="viewTemplateHtml()" title="Reload preview with current form inputs">🔄 Refresh Preview</button>
+                <button class="btn btn-secondary btn-sm" onclick="openPreviewInNewTab()" title="Open preview in new tab">↗️ Open in Tab</button>
                 <a id="btnDownload" class="btn btn-success btn-sm" href="#" download style="display: none;">⬇️ Download PDF</a>
                 <button id="btnVerifyIntegrity" class="btn btn-secondary btn-sm" onclick="verifyCurrentDoc()" style="display: none;">🛡️ Verify SHA-256</button>
               </div>
@@ -629,6 +631,9 @@
     const API_KEY = 'erp-service-secret-key-change-in-production';
     let currentBulkJobId = null;
     let sseSource = null;
+    let currentPreviewMode = 'html';
+    let currentPreviewHtml = '';
+    let currentPdfUrl = '';
 
     // --- Tab Switching ---
     function switchTab(tabKey) {
@@ -723,7 +728,7 @@
         { description: 'Tungsten Carbide Milling Inserts (Pack of 10)', hsnSacCode: '8209', quantity: 5, unit: 'PACK', unitPrice: 2200, gstRate: 18 }
       ];
       renderItems();
-      document.getElementById('docPreviewFrame').src = '/preview/invoice';
+      viewTemplateHtml();
     }
 
     function loadSamplePO() {
@@ -735,7 +740,7 @@
         { description: 'Cold Rolled Steel Coil Grade 304 (2.5mm thickness)', hsnSacCode: '7219', quantity: 1500, unit: 'KGS', unitPrice: 185, gstRate: 18 }
       ];
       renderItems();
-      document.getElementById('docPreviewFrame').src = '/preview/purchase-order';
+      viewTemplateHtml();
     }
 
     function handleDocTypeChange() {
@@ -744,43 +749,38 @@
       else loadSamplePO();
     }
 
-    function viewTemplateHtml() {
-      const type = document.getElementById('docType').value;
-      document.getElementById('docPreviewFrame').src = type === 'invoice' ? '/preview/invoice' : '/preview/purchase-order';
-    }
-
-    // --- PDF Generation API ---
-    async function generatePdf() {
-      const btn = document.getElementById('btnGenerate');
-      btn.disabled = true;
-      btn.innerText = '⏳ Rendering PDF...';
-
+    function buildDocumentPayload() {
       const docType = document.getElementById('docType').value;
-      const documentId = document.getElementById('docId').value;
-      const tenantId = document.getElementById('tenantId').value;
+      const documentId = document.getElementById('docId').value || (docType === 'invoice' ? 'INV-2026-001' : 'PO-2026-001');
+      const tenantId = document.getElementById('tenantId').value || 'tenant-acme';
       const preferSync = document.getElementById('preferSync').checked;
 
       let subtotal = 0;
       let totalTax = 0;
       const formattedItems = items.map(item => {
-        const taxable = item.quantity * item.unitPrice;
-        const tax = taxable * (item.gstRate / 100);
+        const qty = Number(item.quantity) || 1;
+        const price = Number(item.unitPrice) || 0;
+        const rate = Number(item.gstRate) || 0;
+        const taxable = qty * price;
+        const tax = taxable * (rate / 100);
         subtotal += taxable;
         totalTax += tax;
         return {
           description: item.description,
-          hsnSacCode: item.hsnSacCode,
-          quantity: item.quantity,
-          unit: item.unit,
-          unitPrice: item.unitPrice,
+          hsnSacCode: item.hsnSacCode || '8483',
+          quantity: qty,
+          unit: item.unit || 'PCS',
+          unitPrice: price,
           taxableAmount: taxable,
-          igstRate: item.gstRate,
+          igstRate: rate,
           igstAmount: tax,
           totalAmount: taxable + tax
         };
       });
 
-      const payload = {
+      const grandTotal = subtotal + totalTax;
+
+      return {
         documentType: docType,
         documentId: documentId,
         tenantId: tenantId,
@@ -789,7 +789,7 @@
           [docType === 'invoice' ? 'invoiceNumber' : 'poNumber']: documentId,
           [docType === 'invoice' ? 'invoiceDate' : 'poDate']: document.getElementById('docDate').value,
           dueDate: document.getElementById('docDueDate').value,
-          currency: document.getElementById('docCurrency').value,
+          currency: document.getElementById('docCurrency').value || 'INR',
           supplier: {
             name: document.getElementById('suppName').value,
             addressLine1: 'Plot 102, MIDC Industrial Area',
@@ -838,8 +838,8 @@
           subtotal: subtotal,
           totalIgst: totalTax,
           totalTax: totalTax,
-          grandTotal: subtotal + totalTax,
-          grandTotalInWords: 'Rupees Only',
+          grandTotal: grandTotal,
+          grandTotalInWords: 'Rupees ' + grandTotal.toFixed(2) + ' Only',
           bankDetails: {
             bankName: 'HDFC Bank',
             accountNumber: '50200012345678',
@@ -849,6 +849,76 @@
           termsAndConditions: 'Payment due within 30 days.'
         }
       };
+    }
+
+    async function viewTemplateHtml() {
+      const btn = document.getElementById('btnHtmlPreview');
+      const oldText = btn ? btn.innerText : '';
+      if (btn) btn.innerText = '⏳ Rendering...';
+
+      try {
+        const payload = buildDocumentPayload();
+        const res = await fetch('/preview/render-html', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            documentType: payload.documentType,
+            data: payload.data
+          })
+        });
+
+        if (!res.ok) throw new Error('Dynamic preview render failed with status ' + res.status);
+        const html = await res.text();
+
+        const frame = document.getElementById('docPreviewFrame');
+        frame.removeAttribute('src');
+        frame.srcdoc = html;
+
+        currentPreviewHtml = html;
+        currentPreviewMode = 'html';
+
+        const statusBadge = document.getElementById('renderStatusBadge');
+        statusBadge.innerText = 'HTML PREVIEW (LIVE)';
+        statusBadge.className = 'badge badge-info';
+
+        document.getElementById('renderMeta').style.display = 'block';
+        document.getElementById('metaDuration').innerText = '< 5ms (template compile)';
+        document.getElementById('metaSize').innerText = (html.length / 1024).toFixed(1) + ' KB';
+        document.getElementById('metaHash').innerText = 'Live Form Data Compiled';
+
+        document.getElementById('btnDownload').style.display = 'none';
+        document.getElementById('btnVerifyIntegrity').style.display = 'none';
+      } catch (err) {
+        console.warn('Dynamic HTML preview fallback:', err);
+        const type = document.getElementById('docType').value;
+        const frame = document.getElementById('docPreviewFrame');
+        frame.removeAttribute('srcdoc');
+        frame.src = (type === 'invoice' ? '/preview/invoice' : '/preview/purchase-order') + '?_t=' + Date.now();
+      } finally {
+        if (btn) btn.innerText = oldText || '👁️ HTML Preview';
+      }
+    }
+
+    function openPreviewInNewTab() {
+      if (currentPreviewMode === 'pdf' && currentPdfUrl) {
+        window.open(currentPdfUrl, '_blank');
+      } else if (currentPreviewHtml) {
+        const blob = new Blob([currentPreviewHtml], { type: 'text/html' });
+        const url = URL.createObjectURL(blob);
+        window.open(url, '_blank');
+      } else {
+        const type = document.getElementById('docType').value;
+        window.open(type === 'invoice' ? '/preview/invoice' : '/preview/purchase-order', '_blank');
+      }
+    }
+
+    // --- PDF Generation API ---
+    async function generatePdf() {
+      const btn = document.getElementById('btnGenerate');
+      btn.disabled = true;
+      btn.innerText = '⏳ Rendering PDF...';
+
+      const payload = buildDocumentPayload();
 
       try {
         const res = await fetch('/api/v1/documents/generate', {
@@ -856,7 +926,7 @@
           headers: {
             'Content-Type': 'application/json',
             'x-api-key': API_KEY,
-            'x-tenant-id': tenantId
+            'x-tenant-id': payload.tenantId
           },
           body: JSON.stringify(payload)
         });
@@ -870,12 +940,17 @@
         // Show metadata
         if (data.fileSizeBytes) {
           document.getElementById('renderMeta').style.display = 'block';
+          document.getElementById('metaDuration').innerText = (data.renderDurationMs ? data.renderDurationMs + 'ms' : 'Sync (< 4.5s)');
           document.getElementById('metaSize').innerText = (data.fileSizeBytes / 1024).toFixed(1) + ' KB';
           document.getElementById('metaHash').innerText = data.sha256Checksum ? data.sha256Checksum.substring(0, 16) + '...' : 'N/A';
         }
 
-        const downloadPath = `/api/v1/documents/${documentId}/download?documentType=${docType}&tenantId=${tenantId}&apiKey=${API_KEY}`;
-        document.getElementById('docPreviewFrame').src = downloadPath;
+        const downloadPath = `/api/v1/documents/${payload.documentId}/download?documentType=${payload.documentType}&tenantId=${payload.tenantId}&apiKey=${API_KEY}&_t=${Date.now()}`;
+        const frame = document.getElementById('docPreviewFrame');
+        frame.removeAttribute('srcdoc');
+        frame.src = downloadPath;
+        currentPreviewMode = 'pdf';
+        currentPdfUrl = downloadPath;
         
         const btnDownload = document.getElementById('btnDownload');
         btnDownload.href = downloadPath;
@@ -1076,8 +1151,66 @@
       }
     }
 
+    async function handleGlobalRefresh() {
+      const btn = document.getElementById('btnHeaderRefresh');
+      const oldHtml = btn ? btn.innerHTML : '🔄 Refresh';
+      if (btn) {
+        btn.innerHTML = '⏳ Refreshing...';
+        btn.disabled = true;
+      }
+
+      try {
+        await checkHealth();
+
+        const activePane = document.querySelector('.tab-pane.active');
+        if (activePane) {
+          if (activePane.id === 'tab-single') {
+            await viewTemplateHtml();
+          } else if (activePane.id === 'tab-metrics') {
+            await fetchMetrics();
+          } else if (activePane.id === 'tab-audit') {
+            const docId = document.getElementById('verifyDocId').value;
+            if (docId) await executeIntegrityVerification();
+          } else if (activePane.id === 'tab-bulk' && currentBulkJobId) {
+            try {
+              const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/status`, {
+                headers: { 'x-api-key': API_KEY, 'x-tenant-id': 'tenant-acme' }
+              });
+              if (res.ok) {
+                const job = await res.json();
+                document.getElementById('bulkCompleted').innerText = job.completedDocuments || 0;
+                document.getElementById('bulkFailed').innerText = job.failedDocuments || 0;
+                const pct = Math.round(((job.completedDocuments + job.failedDocuments) / job.totalDocuments) * 100) || 0;
+                document.getElementById('bulkProgressBar').style.width = pct + '%';
+                document.getElementById('bulkPercentText').innerText = pct + '%';
+              }
+            } catch (e) {
+              console.warn('Bulk refresh failed', e);
+            }
+          }
+        }
+
+        if (btn) {
+          btn.innerHTML = '✅ Refreshed!';
+          setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+          }, 1000);
+        }
+      } catch (err) {
+        if (btn) {
+          btn.innerHTML = '⚠️ Error';
+          setTimeout(() => {
+            btn.innerHTML = oldHtml;
+            btn.disabled = false;
+          }, 1200);
+        }
+      }
+    }
+
     // Initial boot
     renderItems();
+    viewTemplateHtml();
     checkHealth();
     setInterval(checkHealth, 10000);
   </script>

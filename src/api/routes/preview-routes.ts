@@ -139,3 +139,13 @@ previewRouter.get(
   })
 );
 
+// 6. Dynamic HTML Preview rendering live user payload from frontend
+previewRouter.post('/preview/render-html', (req: Request, res: Response) => {
+  const { documentType, data } = req.body;
+  const docType = documentType === 'purchase_order' ? 'purchase_order' : 'invoice';
+  const html = TemplateEngine.render(docType, (data || {}) as Record<string, unknown>);
+  res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.send(html);
+});
+
+
