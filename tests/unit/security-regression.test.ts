@@ -6,7 +6,8 @@ import {
   setForceInMemoryRepositories,
   getDocumentRepository,
 } from '../../src/database/repositories/repository-factory.js';
-import { setForceInMemoryQueue } from '../../src/queue/queues.js';
+import { setForceInMemoryQueue, InMemoryQueueManager } from '../../src/queue/queues.js';
+import { APP_CONSTANTS } from '../../src/config/constants.js';
 import { setStorageService } from '../../src/storage/storage-factory.js';
 import { LocalStorageAdapter } from '../../src/storage/local-storage.js';
 import { documentService } from '../../src/services/document-service.js';
@@ -296,5 +297,41 @@ describe('Security & Concurrency Defect Regression Tests', () => {
       API_KEY: INSECURE_DEFAULT_API_KEY,
     });
     expect(devResult.success).toBe(true);
+  });
+
+  it('Defect 9: Single-job latency SLA is preserved by prioritizing single requests (Priority 1) ahead of bulk items (Priority 10)', async () => {
+    const queueManager = new InMemoryQueueManager();
+
+    // Enqueue 5 bulk jobs (bulkJobId defined)
+    for (let i = 1; i <= 5; i++) {
+      await queueManager.addRenderJob({
+        jobId: `bulk_item_${i}`,
+        tenantId: 'tenant_alpha',
+        documentId: `INV-BULK-${i}`,
+        documentType: 'invoice',
+        inputPayload: { id: i },
+        bulkJobId: 'bulk_batch_001',
+      });
+    }
+
+    // Now an urgent single document request arrives (bulkJobId is undefined)
+    await queueManager.addRenderJob({
+      jobId: 'urgent_single_job_999',
+      tenantId: 'tenant_alpha',
+      documentId: 'INV-URGENT-999',
+      documentType: 'invoice',
+      inputPayload: { id: 999 },
+    });
+
+    const pendingJobs = queueManager.getPendingRenderJobs();
+    expect(pendingJobs.length).toBe(6);
+
+    // The urgent single job should jump to index 0 with priority 1 (HIGH)
+    expect(pendingJobs[0].jobId).toBe('urgent_single_job_999');
+    expect(pendingJobs[0].priority).toBe(APP_CONSTANTS.JOB_PRIORITIES.HIGH);
+
+    // Subsequent jobs are the bulk batch with priority 10 (LOW)
+    expect(pendingJobs[1].jobId).toBe('bulk_item_1');
+    expect(pendingJobs[1].priority).toBe(APP_CONSTANTS.JOB_PRIORITIES.LOW);
   });
 });

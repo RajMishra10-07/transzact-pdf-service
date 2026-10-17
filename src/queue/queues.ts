@@ -14,6 +14,7 @@ export interface RenderJobData {
   options?: DocumentRenderOptions;
   bulkJobId?: string;
   isLargeDocument?: boolean;
+  priority?: number;
 }
 
 export interface ArchiveJobData {
@@ -54,8 +55,10 @@ class BullMQManager implements IQueueManager {
 
   public async addRenderJob(data: RenderJobData): Promise<string> {
     const targetQueue = data.isLargeDocument ? this.largeQueue : this.normalQueue;
-    const job = await targetQueue.add('render-pdf', data, {
+    const priority = data.priority ?? (data.bulkJobId ? APP_CONSTANTS.JOB_PRIORITIES.LOW : APP_CONSTANTS.JOB_PRIORITIES.HIGH);
+    const job = await targetQueue.add('render-pdf', { ...data, priority }, {
       jobId: data.jobId,
+      priority,
     });
     return job.id || data.jobId;
   }
@@ -105,14 +108,26 @@ export class InMemoryQueueManager implements IQueueManager {
   private archiveJobs: ArchiveJobData[] = [];
 
   public async addRenderJob(data: RenderJobData): Promise<string> {
-    this.renderJobs.push(data);
-    logger.info({ jobId: data.jobId, isLarge: data.isLargeDocument }, 'Enqueued render job (In-Memory)');
+    const priority = data.priority ?? (data.bulkJobId ? APP_CONSTANTS.JOB_PRIORITIES.LOW : APP_CONSTANTS.JOB_PRIORITIES.HIGH);
+    const enrichedData = { ...data, priority };
+
+    // Insert sorted by priority (lowest numeric value = highest priority)
+    const insertIndex = this.renderJobs.findIndex(
+      (j) => (j.priority ?? APP_CONSTANTS.JOB_PRIORITIES.LOW) > priority
+    );
+    if (insertIndex === -1) {
+      this.renderJobs.push(enrichedData);
+    } else {
+      this.renderJobs.splice(insertIndex, 0, enrichedData);
+    }
+
+    logger.info({ jobId: data.jobId, isLarge: data.isLargeDocument, priority }, 'Enqueued render job (In-Memory)');
 
     if (env.NODE_ENV !== 'test' && env.USE_IN_MEMORY_FALLBACK) {
       setImmediate(async () => {
         try {
           const { processRenderJob } = await import('../workers/document-worker.js');
-          await processRenderJob(data);
+          await processRenderJob(enrichedData);
         } catch (err) {
           logger.error({ err, jobId: data.jobId }, 'In-Memory render job execution error');
         }

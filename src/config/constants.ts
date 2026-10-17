@@ -17,6 +17,11 @@ export const APP_CONSTANTS = {
   REDIS_CHANNELS: {
     BULK_PROGRESS: 'transzact:bulk-progress',
   },
+  JOB_PRIORITIES: {
+    HIGH: 1, // Single ad-hoc requests (5-second latency SLA)
+    DEFAULT: 5,
+    LOW: 10, // Bulk batch items
+  },
   STORAGE_KEYS: {
     PDF: (tenantId: string, docType: string, docId: string, version = 1) =>
       `tenants/${tenantId}/documents/${docType}/${docId}-v${version}.pdf`,
