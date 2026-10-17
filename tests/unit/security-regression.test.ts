@@ -193,4 +193,39 @@ describe('Security & Concurrency Defect Regression Tests', () => {
     expect(recoveredJob.status).toBe('failed');
     expect(recoveredJob.errorMessage).toContain('Worker process terminated or crashed');
   });
+
+  it('Defect 6: Non-admin user from Tenant A cannot access Tenant B resources (Cross-Tenant 403)', async () => {
+    // Generate valid JWT for an operator belonging strictly to tenant_attacker
+    const { signJwt } = await import('../../src/utils/auth-crypto.js');
+    const attackerToken = signJwt({
+      sub: 'attacker_user_id',
+      email: 'attacker@evilcorp.com',
+      role: 'operator',
+      tenantId: 'tenant_attacker',
+      name: 'Attacker Operator',
+    });
+
+    // Attacker attempts to download an invoice belonging to tenant_victim
+    const res = await request(app)
+      .get('/api/v1/documents/INV-VICTIM-999/download')
+      .set('Authorization', `Bearer ${attackerToken}`)
+      .set('x-tenant-id', 'tenant_victim');
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toContain('Cross-tenant access forbidden');
+  });
+
+  it('Defect 7: Public unauthenticated signup cannot claim protected enterprise tenant (403 Forbidden)', async () => {
+    const res = await request(app)
+      .post('/api/v1/auth/signup')
+      .send({
+        email: 'uninvited_intruder@gmail.com',
+        password: 'password123',
+        name: 'Intruder',
+        tenantId: 'transzact-corp', // Protected enterprise tenant
+      });
+
+    expect(res.status).toBe(403);
+    expect(res.body.error.message).toContain('requires an administrator invitation');
+  });
 });

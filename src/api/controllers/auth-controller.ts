@@ -2,12 +2,21 @@ import { Request, Response } from 'express';
 import { signupSchema, loginSchema } from '../schemas/auth-schemas.js';
 import { getUserRepository } from '../../database/repositories/repository-factory.js';
 import { hashPassword, verifyPassword, signJwt } from '../../utils/auth-crypto.js';
-import { AuthenticationError, ConflictError } from '../../domain/errors.js';
+import { AuthenticationError, ConflictError, ForbiddenError } from '../../domain/errors.js';
 import { logger } from '../../utils/logger.js';
 
 export class AuthController {
   static async signup(req: Request, res: Response): Promise<void> {
     const input = signupSchema.parse(req.body);
+
+    // Prevent uninvited public self-registration into protected enterprise tenants
+    const PROTECTED_ENTERPRISE_TENANTS = ['transzact-corp', 'system', 'root'];
+    if (input.tenantId && PROTECTED_ENTERPRISE_TENANTS.includes(input.tenantId)) {
+      throw new ForbiddenError(
+        `Registration for protected enterprise tenant '${input.tenantId}' requires an administrator invitation`
+      );
+    }
+
     const userRepo = getUserRepository();
 
     const existingUser = await userRepo.findByEmail(input.email);

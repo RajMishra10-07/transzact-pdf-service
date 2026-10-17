@@ -91,7 +91,8 @@ services:
       HOST: 0.0.0.0
       NODE_ENV: production
       LOG_LEVEL: info
-      API_KEY: erp-service-secret-key-change-in-production
+      API_KEY: compose-prod-m2m-secure-key-928471049281
+      JWT_SECRET: compose-prod-jwt-secret-key-8193810294819203819284
       DEV_AUTH_BYPASS: "false"
       STORAGE_DRIVER: s3
       AWS_REGION: ap-south-1

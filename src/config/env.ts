@@ -3,6 +3,9 @@ import { z } from 'zod';
 
 dotenv.config();
 
+export const INSECURE_DEFAULT_API_KEY = 'erp-service-secret-key-change-in-production';
+export const INSECURE_DEFAULT_JWT_SECRET = 'transzact-super-secure-jwt-secret-key-change-in-production-2026';
+
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   HOST: z.string().default('0.0.0.0'),
@@ -65,6 +68,33 @@ const envSchema = z.object({
     .string()
     .transform((val) => val === 'true')
     .default('false'),
+}).superRefine((data, ctx) => {
+  if (data.NODE_ENV === 'production') {
+    if (!data.JWT_SECRET || data.JWT_SECRET === INSECURE_DEFAULT_JWT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message:
+          'CRITICAL SECURITY VIOLATION: In production (NODE_ENV=production), JWT_SECRET must be explicitly set to a private secret and cannot use the default placeholder from GitHub.',
+      });
+    }
+    if (!data.API_KEY || data.API_KEY === INSECURE_DEFAULT_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['API_KEY'],
+        message:
+          'CRITICAL SECURITY VIOLATION: In production (NODE_ENV=production), API_KEY must be explicitly set to a private secret and cannot use the default placeholder from GitHub.',
+      });
+    }
+    if (data.DEV_AUTH_BYPASS) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['DEV_AUTH_BYPASS'],
+        message:
+          'CRITICAL SECURITY VIOLATION: DEV_AUTH_BYPASS cannot be enabled in production environments.',
+      });
+    }
+  }
 });
 
 export type Env = z.infer<typeof envSchema>;

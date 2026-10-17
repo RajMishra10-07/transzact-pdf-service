@@ -38,6 +38,19 @@ export function tenantMiddleware(req: Request, res: Response, next: NextFunction
   }
 
   const resolvedTenant = headerTenantStr || bodyTenantStr || queryTenantStr;
+
+  // Strict cross-tenant isolation: non-admin users cannot access resources belonging to another tenant
+  if (req.user && req.user.role !== 'admin') {
+    if (resolvedTenant && resolvedTenant !== req.user.tenantId) {
+      throw new ForbiddenError(
+        `Cross-tenant access forbidden: user belongs to tenant '${req.user.tenantId}' and cannot access '${resolvedTenant}'`
+      );
+    }
+    // If tenant wasn't explicitly passed, enforce user's authenticated tenant
+    req.tenantId = req.user.tenantId;
+    return next();
+  }
+
   req.tenantId = resolvedTenant;
   next();
 }
