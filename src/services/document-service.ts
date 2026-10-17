@@ -27,6 +27,12 @@ export interface GenerateResult {
 }
 
 export class DocumentService {
+  private activeSyncRenders = 0;
+
+  public getActiveSyncRenders(): number {
+    return this.activeSyncRenders;
+  }
+
   /**
    * Generates a single document with idempotency, snapshot immutability,
    * safe synchronous rendering option, and fallback to asynchronous queue.
@@ -119,12 +125,24 @@ export class DocumentService {
       };
     }
 
-    // 4. Check if synchronous generation should be attempted
-    const shouldAttemptSync = req.options?.preferSync && !isLargeDoc;
+    // 4. Check if synchronous generation should be attempted (guarded by concurrency capacity)
+    const syncSlotAvailable = this.activeSyncRenders < env.MAX_SYNC_RENDER_CONCURRENCY;
+    const shouldAttemptSync = req.options?.preferSync && !isLargeDoc && syncSlotAvailable;
+
+    if (req.options?.preferSync && !isLargeDoc && !syncSlotAvailable) {
+      logger.warn(
+        { activeSyncRenders: this.activeSyncRenders, max: env.MAX_SYNC_RENDER_CONCURRENCY, jobId: job.id },
+        'Synchronous render concurrency capacity reached; falling back gracefully to background queue'
+      );
+    }
 
     if (shouldAttemptSync) {
+      this.activeSyncRenders++;
       try {
-        logger.info({ jobId: job.id, documentId: req.documentId }, 'Attempting synchronous PDF rendering');
+        logger.info(
+          { jobId: job.id, documentId: req.documentId, activeSyncRenders: this.activeSyncRenders },
+          'Attempting synchronous PDF rendering'
+        );
         await docRepo.updateGenerationJobStatus(job.id, 'processing');
 
         const renderResult = await pdfService.renderPdf(req.documentType, req.data, req.options);
@@ -170,6 +188,8 @@ export class DocumentService {
         );
         // Fall back to queue
         await docRepo.updateGenerationJobStatus(job.id, 'queued');
+      } finally {
+        this.activeSyncRenders--;
       }
     }
 

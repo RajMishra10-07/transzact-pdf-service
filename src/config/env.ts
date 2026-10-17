@@ -29,6 +29,7 @@ const envSchema = z.object({
   LARGE_DOCUMENT_THRESHOLD: z.coerce.number().default(150),
   RENDER_TIMEOUT_MS: z.coerce.number().default(15000),
   SYNC_RENDER_TIMEOUT_MS: z.coerce.number().default(4500),
+  MAX_SYNC_RENDER_CONCURRENCY: z.coerce.number().default(2),
   MAX_BROWSER_LIFETIME_RENDERS: z.coerce.number().default(50),
   MAX_BROWSER_MEMORY_MB: z.coerce.number().default(750),
 

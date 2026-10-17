@@ -59,4 +59,10 @@ Format:
    **What Was Wrong**: Public registration (`POST /api/v1/auth/signup`) allowed users to supply `role: "admin"` in the payload, creating a privilege escalation vulnerability where anyone could self-appoint as superuser.  
    **Discovered By**: User / Security Review  
    **Remediation**: Restricted `signupSchema` role enum strictly to `['operator', 'viewer']`, removed the admin option from the signup UI select, and added automated test asserting HTTP 400 rejection on admin signup attempts.  
-   **Commit**: *Pending next step*
+   **Commit**: `e38cbe9` (fix(security): signup can no longer pick admin role)
+
+9. **Date**: 2026-10-18  
+   **What Was Wrong**: Synchronous rendering (`options.preferSync`) executed unthrottled inside the Express process, risking memory exhaustion and server crashes under concurrent load.  
+   **Discovered By**: User / Architecture Review (Issue 1)  
+   **Remediation**: Added `MAX_SYNC_RENDER_CONCURRENCY` (default 2) and an active render semaphore guard in `DocumentService`, gracefully falling back to BullMQ background queues (HTTP 202) when capacity is saturated.  
+   **Commit**: `ea41607` (fix(perf): guard synchronous pdf rendering with concurrency limit and queue fallback)

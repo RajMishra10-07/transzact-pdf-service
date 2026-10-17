@@ -171,4 +171,63 @@ describe('HTTP API Endpoints Integration Tests', () => {
     const content = res.body instanceof Buffer ? res.body.toString('utf8') : res.text;
     expect(content).toContain('%PDF-1.4 Mock Stored PDF');
   });
+
+  it('10. Should limit synchronous render concurrency and fall back gracefully to queue', async () => {
+    // When MAX_SYNC_RENDER_CONCURRENCY is simulated as reached (e.g. activeSyncRenders = 2)
+    const originalMax = env.MAX_SYNC_RENDER_CONCURRENCY;
+    (env as { MAX_SYNC_RENDER_CONCURRENCY: number }).MAX_SYNC_RENDER_CONCURRENCY = 0; // Force immediate fallback
+
+    try {
+      const invoicePayload = {
+        documentType: 'invoice',
+        documentId: 'INV-SYNC-LIMIT-01',
+        tenantId: 'tenant_sync_test',
+        options: { preferSync: true },
+        data: {
+          invoiceNumber: 'INV-SYNC-LIMIT-01',
+          invoiceDate: '2026-10-18',
+          supplier: {
+            name: 'Acme Corp',
+            addressLine1: 'Plot 1',
+            city: 'Mumbai',
+            state: 'Maharashtra',
+            pincode: '400001',
+          },
+          customer: {
+            name: 'Customer Beta',
+            addressLine1: 'Plot 2',
+            city: 'Pune',
+            state: 'Maharashtra',
+            pincode: '411001',
+          },
+          items: [
+            {
+              description: 'Item 1',
+              quantity: 2,
+              unit: 'PCS',
+              unitPrice: 500,
+              taxableAmount: 1000,
+              totalAmount: 1180,
+            },
+          ],
+          subtotal: 1000,
+          grandTotal: 1180,
+        },
+      };
+
+      const res = await request(app)
+        .post('/api/v1/documents/generate')
+        .set('x-api-key', validApiKey)
+        .set('x-tenant-id', 'tenant_sync_test')
+        .send(invoicePayload);
+
+      // Should return 202 Accepted with isSync: false instead of crashing
+      expect(res.status).toBe(202);
+      expect(res.body.isSync).toBe(false);
+      expect(res.body.status).toBe('queued');
+      expect(res.body.statusUrl).toBeDefined();
+    } finally {
+      (env as { MAX_SYNC_RENDER_CONCURRENCY: number }).MAX_SYNC_RENDER_CONCURRENCY = originalMax;
+    }
+  });
 });
