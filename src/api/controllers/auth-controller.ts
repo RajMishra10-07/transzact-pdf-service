@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { signupSchema, loginSchema } from '../schemas/auth-schemas.js';
+import { signupSchema, loginSchema, createUserSchema } from '../schemas/auth-schemas.js';
 import { getUserRepository } from '../../database/repositories/repository-factory.js';
 import { hashPassword, verifyPassword, signJwt } from '../../utils/auth-crypto.js';
 import { AuthenticationError, ConflictError, ForbiddenError } from '../../domain/errors.js';
@@ -8,15 +8,6 @@ import { logger } from '../../utils/logger.js';
 export class AuthController {
   static async signup(req: Request, res: Response): Promise<void> {
     const input = signupSchema.parse(req.body);
-
-    // Prevent uninvited public self-registration into protected enterprise tenants
-    const PROTECTED_ENTERPRISE_TENANTS = ['transzact-corp', 'system', 'root'];
-    if (input.tenantId && PROTECTED_ENTERPRISE_TENANTS.includes(input.tenantId)) {
-      throw new ForbiddenError(
-        `Registration for protected enterprise tenant '${input.tenantId}' requires an administrator invitation`
-      );
-    }
-
     const userRepo = getUserRepository();
 
     const existingUser = await userRepo.findByEmail(input.email);
@@ -29,8 +20,8 @@ export class AuthController {
       email: input.email,
       passwordHash,
       name: input.name,
-      role: input.role,
-      tenantId: input.tenantId,
+      role: 'viewer', // Public signup always gets role 'viewer'
+      tenantId: 'default-tenant', // Public signup cannot pick enterprise tenant
     });
 
     const token = signJwt({
@@ -47,6 +38,45 @@ export class AuthController {
       success: true,
       message: 'User registered successfully',
       token,
+      user: {
+        id: createdUser.id,
+        email: createdUser.email,
+        name: createdUser.name,
+        role: createdUser.role,
+        tenantId: createdUser.tenantId,
+        createdAt: createdUser.createdAt,
+      },
+    });
+  }
+
+  static async createUser(req: Request, res: Response): Promise<void> {
+    const input = createUserSchema.parse(req.body);
+    const userRepo = getUserRepository();
+
+    const existingUser = await userRepo.findByEmail(input.email);
+    if (existingUser) {
+      throw new ConflictError(`User with email '${input.email}' already exists`);
+    }
+
+    // New user's tenantId must equal the admin's own tenantId
+    const adminTenantId = req.user?.tenantId || 'transzact-corp';
+    const passwordHash = hashPassword(input.password);
+    const createdUser = await userRepo.create({
+      email: input.email,
+      passwordHash,
+      name: input.name,
+      role: input.role,
+      tenantId: adminTenantId,
+    });
+
+    logger.info(
+      { userId: createdUser.id, email: createdUser.email, role: createdUser.role, tenantId: createdUser.tenantId, createdBy: req.user?.id },
+      'Admin created new user'
+    );
+
+    res.status(201).json({
+      success: true,
+      message: 'User created successfully',
       user: {
         id: createdUser.id,
         email: createdUser.email,

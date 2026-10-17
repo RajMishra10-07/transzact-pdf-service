@@ -215,17 +215,19 @@ describe('Security & Concurrency Defect Regression Tests', () => {
     expect(res.body.error.message).toContain('Cross-tenant access forbidden');
   });
 
-  it('Defect 7: Public unauthenticated signup cannot claim protected enterprise tenant (403 Forbidden)', async () => {
+  it('Defect 7: Public unauthenticated signup cannot choose role or tenantId (always viewer and default-tenant)', async () => {
     const res = await request(app)
       .post('/api/v1/auth/signup')
       .send({
         email: 'uninvited_intruder@gmail.com',
         password: 'password123',
         name: 'Intruder',
+        role: 'admin',
         tenantId: 'transzact-corp', // Protected enterprise tenant
       });
 
-    expect(res.status).toBe(403);
-    expect(res.body.error.message).toContain('requires an administrator invitation');
+    expect(res.status).toBe(201);
+    expect(res.body.user.role).toBe('viewer');
+    expect(res.body.user.tenantId).toBe('default-tenant');
   });
 });

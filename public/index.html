@@ -475,23 +475,13 @@
               <label>Email Address</label>
               <input type="email" id="signupEmail" required placeholder="jane@company.com">
             </div>
-            <div class="form-group" style="margin-bottom: 10px;">
+            <div class="form-group" style="margin-bottom: 12px;">
               <label>Password (min 6 characters)</label>
               <input type="password" id="signupPassword" required minlength="6" placeholder="••••••••">
             </div>
-            <div class="form-row" style="margin-bottom: 14px;">
-              <div class="form-group">
-                <label>Assigned Role (RBAC)</label>
-                <select id="signupRole">
-                  <option value="operator" selected>Operator (Single & Bulk)</option>
-                  <option value="viewer">Viewer (Read-Only)</option>
-                </select>
-              </div>
-              <div class="form-group">
-                <label>Tenant ID</label>
-                <input type="text" id="signupTenantId" value="transzact-corp" placeholder="transzact-corp">
-              </div>
-            </div>
+            <p style="font-size: 11px; color: #718096; margin-bottom: 14px;">
+              ℹ️ Public registration creates a <strong>Viewer (Read-Only)</strong> account. Operational privileges are provisioned by an organization administrator.
+            </p>
             <button type="submit" class="btn btn-success" id="btnSignupSubmit" style="width: 100%;">
               🚀 Create Account & Sign In
             </button>
@@ -1083,8 +1073,6 @@
       const name = document.getElementById('signupName').value.trim();
       const email = document.getElementById('signupEmail').value.trim();
       const password = document.getElementById('signupPassword').value;
-      const role = document.getElementById('signupRole').value;
-      const tenantId = document.getElementById('signupTenantId').value.trim() || 'transzact-corp';
       const btn = document.getElementById('btnSignupSubmit');
       btn.disabled = true;
       btn.innerText = '⏳ Creating account...';
@@ -1093,7 +1081,7 @@
         const res = await fetch('/api/v1/auth/signup', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, email, password, role, tenantId })
+          body: JSON.stringify({ name, email, password })
         });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error?.message || 'Registration failed');

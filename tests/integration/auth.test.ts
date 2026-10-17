@@ -12,25 +12,23 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
   });
 
   describe('User Registration (Signup)', () => {
-    it('should successfully register a new operator user and return JWT token', async () => {
+    it('should successfully register a new user with role viewer and default tenant', async () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
-          email: 'newoperator@acme.com',
+          email: 'newviewer@acme.com',
           password: 'securePassword123!',
-          name: 'Jane Operator',
-          role: 'operator',
-          tenantId: 'tenant-acme',
+          name: 'Jane Viewer',
         });
 
       expect(res.status).toBe(201);
       expect(res.body.success).toBe(true);
       expect(res.body.token).toBeDefined();
       expect(res.body.user).toMatchObject({
-        email: 'newoperator@acme.com',
-        name: 'Jane Operator',
-        role: 'operator',
-        tenantId: 'tenant-acme',
+        email: 'newviewer@acme.com',
+        name: 'Jane Viewer',
+        role: 'viewer',
+        tenantId: 'default-tenant',
       });
       expect(res.body.user.passwordHash).toBeUndefined();
     });
@@ -43,7 +41,6 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
           email: 'duplicate@acme.com',
           password: 'password123',
           name: 'First User',
-          role: 'viewer',
         });
 
       // Second registration with same email
@@ -53,7 +50,6 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
           email: 'duplicate@acme.com',
           password: 'anotherPassword123',
           name: 'Second User',
-          role: 'viewer',
         });
 
       expect(res.status).toBe(409);
@@ -71,7 +67,7 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
       expect(res.status).toBe(400);
     });
 
-    it('should reject registration attempting to pick admin role with 400 Validation Error', async () => {
+    it('public signup should ignore role and tenantId inputs and always assign viewer', async () => {
       const res = await request(app)
         .post('/api/v1/auth/signup')
         .send({
@@ -79,10 +75,68 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
           password: 'securePassword123!',
           name: 'Privilege Escalator',
           role: 'admin',
+          tenantId: 'transzact-corp',
         });
 
-      expect(res.status).toBe(400);
-      expect(res.body.error).toBeDefined();
+      expect(res.status).toBe(201);
+      expect(res.body.user.role).toBe('viewer');
+      expect(res.body.user.tenantId).toBe('default-tenant');
+    });
+  });
+
+  describe('Admin User Creation (POST /api/v1/auth/users)', () => {
+    it('should allow authenticated admin to create an operator with same tenantId', async () => {
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'admin@transzact.com', password: 'password123' });
+      const adminToken = loginRes.body.token;
+
+      const res = await request(app)
+        .post('/api/v1/auth/users')
+        .set('Authorization', `Bearer ${adminToken}`)
+        .send({
+          email: 'createdoperator@transzact.com',
+          password: 'password123',
+          name: 'New Operator',
+          role: 'operator',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.user).toMatchObject({
+        email: 'createdoperator@transzact.com',
+        role: 'operator',
+        tenantId: 'transzact-corp',
+      });
+    });
+
+    it('should reject non-admin from creating users with 403 Forbidden', async () => {
+      const loginRes = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ email: 'operator@transzact.com', password: 'password123' });
+      const opToken = loginRes.body.token;
+
+      const res = await request(app)
+        .post('/api/v1/auth/users')
+        .set('Authorization', `Bearer ${opToken}`)
+        .send({
+          email: 'unauthorized@transzact.com',
+          password: 'password123',
+          role: 'viewer',
+        });
+
+      expect(res.status).toBe(403);
+    });
+
+    it('should reject unauthenticated request to POST /api/v1/auth/users with 401', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/users')
+        .send({
+          email: 'unauthenticated@transzact.com',
+          password: 'password123',
+        });
+
+      expect(res.status).toBe(401);
     });
   });
 

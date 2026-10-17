@@ -264,8 +264,10 @@ On a 4 GB RAM instance (`t4g.medium`), the system operates with **1.55 GB (38.7%
 
 ## 5. Complete AI Interaction & Prompt History Log
 
-### 5.1 Full Chronological User Prompts (From Starting to Last)
-The following is the complete, unaltered audit log of prompts issued from the initial project inception through final delivery:
+> **Full Unedited Chat Transcripts**: The complete, verbatim conversational history containing every user prompt, architectural plan, code generation step, review report, and test execution is compiled in [CHAT_HISTORY.md](file:///c:/Users/Raj/OneDrive/Desktop/transzact-project/CHAT_HISTORY.md) (and [docs/CHAT_HISTORY.md](file:///c:/Users/Raj/OneDrive/Desktop/transzact-project/docs/CHAT_HISTORY.md)).
+
+### 5.1 Chronological User Prompts Overview
+The following is an overview log of major prompts and tasks issued across project sessions:
 
 | # | Timestamp (UTC) | User Prompt Content | Action / Phase |
 | :--- | :--- | :--- | :--- |

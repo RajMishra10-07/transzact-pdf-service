@@ -1,8 +1,7 @@
 import { z } from 'zod';
 
 export const userRoleSchema = z.enum(['admin', 'operator', 'viewer']);
-export const publicSignupRoleSchema = z.enum(['operator', 'viewer']);
-
+// Public signup schema: Users cannot choose their role or tenantId
 export const signupSchema = z.object({
   email: z
     .string()
@@ -19,13 +18,26 @@ export const signupSchema = z.object({
     .max(100)
     .trim()
     .default('ERP User'),
-  role: publicSignupRoleSchema.default('operator'),
-  tenantId: z
+});
+
+// Admin-only user creation schema: Allows authenticated admin to create user with a role
+export const createUserSchema = z.object({
+  email: z
     .string()
-    .min(1, 'Tenant ID cannot be empty')
-    .max(64)
+    .email('Invalid email address')
+    .max(255)
+    .transform((val) => val.trim().toLowerCase()),
+  password: z
+    .string()
+    .min(6, 'Password must be at least 6 characters')
+    .max(128, 'Password must not exceed 128 characters'),
+  name: z
+    .string()
+    .min(1, 'Name is required')
+    .max(100)
     .trim()
-    .default('default-tenant'),
+    .default('ERP User'),
+  role: userRoleSchema.default('operator'),
 });
 
 export const loginSchema = z.object({
@@ -37,5 +49,6 @@ export const loginSchema = z.object({
 });
 
 export type SignupInput = z.infer<typeof signupSchema>;
+export type CreateUserInput = z.infer<typeof createUserSchema>;
 export type LoginInput = z.infer<typeof loginSchema>;
 

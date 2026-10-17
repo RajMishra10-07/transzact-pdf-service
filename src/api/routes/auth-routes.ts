@@ -18,4 +18,10 @@ authRouter.get(
   requireRole('admin'),
   asyncHandler(AuthController.listUsers)
 );
+authRouter.post(
+  '/auth/users',
+  authMiddleware,
+  requireRole('admin'),
+  asyncHandler(AuthController.createUser)
+);
 

@@ -265,3 +265,15 @@ npm test
 - **Template Escaping**: Handlebars auto-escapes all HTML values, preventing script execution.
 - **Tenant Isolation**: Every database query and download request enforces tenant scoping.
 - **Input Snapshot Immutability**: Rendering executes against immutable persisted payloads, immune to subsequent ERP database updates.
+
+---
+
+## 📚 Project Documentation & Audit Logs
+- [APPROACH.md](APPROACH.md): Complete engineering defense, capacity calculations, failure mode analysis, and architectural decisions.
+- [CHAT_HISTORY.md](CHAT_HISTORY.md): Full unedited transcript of all AI chat conversations used to create and verify the microservice.
+- [docs/ai-corrections-log.md](docs/ai-corrections-log.md): Explicit log of issues identified, corrected, and verified with commits.
+- [docs/architecture.md](docs/architecture.md): Deep-dive into microservice components and lifecycle.
+- [docs/capacity-planning.md](docs/capacity-planning.md): Resource profiles, concurrency limits, and memory budgeting.
+- [docs/cost-estimation.md](docs/cost-estimation.md): AWS deployment cost calculations under ₹12,500/month.
+- [docs/operations.md](docs/operations.md): Disaster recovery, telemetry, and runbooks.
+
