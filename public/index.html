@@ -88,11 +88,12 @@
     .nav-tab:hover { color: var(--primary); }
     .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
 
-    /* Main Container */
+    /* Main Container - Full Screen Coverage */
     .main-container {
-      max-width: 1440px;
-      margin: 20px auto;
-      padding: 0 20px 40px;
+      width: 100%;
+      max-width: 100%;
+      margin: 0;
+      padding: 16px 24px 40px;
     }
     .tab-pane { display: none; }
     .tab-pane.active { display: block; }
@@ -100,11 +101,12 @@
     /* Layout Grids */
     .two-col-layout {
       display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 20px;
+      grid-template-columns: minmax(520px, 1fr) minmax(580px, 1.2fr);
+      gap: 24px;
       align-items: start;
+      width: 100%;
     }
-    @media (max-width: 1024px) {
+    @media (max-width: 1180px) {
       .two-col-layout { grid-template-columns: 1fr; }
     }
 
@@ -222,18 +224,34 @@
       margin-top: 4px;
     }
 
-    /* Live Preview Frame */
+    /* Live Preview Frame - Full Height Viewport Fitting */
     .preview-container {
       position: sticky;
-      top: 80px;
+      top: 75px;
+      display: flex;
+      flex-direction: column;
+      height: calc(100vh - 95px);
     }
     .preview-frame {
       width: 100%;
-      height: 800px;
+      height: 100%;
+      flex: 1;
+      min-height: calc(100vh - 180px);
       border: 1px solid var(--border);
       border-radius: 8px;
       background: white;
       box-shadow: var(--shadow);
+    }
+    .preview-container.fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      z-index: 99999 !important;
+      background: #f8fafc !important;
+      padding: 16px !important;
+      box-sizing: border-box !important;
     }
     .badge {
       display: inline-block;
@@ -479,6 +497,7 @@
               <div style="display: flex; gap: 8px;">
                 <button class="btn btn-secondary btn-sm" onclick="viewTemplateHtml()" title="Reload preview with current form inputs">🔄 Refresh Preview</button>
                 <button class="btn btn-secondary btn-sm" onclick="openPreviewInNewTab()" title="Open preview in new tab">↗️ Open in Tab</button>
+                <button class="btn btn-secondary btn-sm" id="btnToggleFullscreen" onclick="togglePreviewFullscreen()" title="Toggle full screen view">⛶ Maximize</button>
                 <a id="btnDownload" class="btn btn-success btn-sm" href="#" download style="display: none;">⬇️ Download PDF</a>
                 <button id="btnVerifyIntegrity" class="btn btn-secondary btn-sm" onclick="verifyCurrentDoc()" style="display: none;">🛡️ Verify SHA-256</button>
               </div>
@@ -975,6 +994,16 @@
       } else {
         const type = document.getElementById('docType').value;
         window.open(type === 'invoice' ? '/preview/invoice' : '/preview/purchase-order', '_blank');
+      }
+    }
+
+    function togglePreviewFullscreen() {
+      const container = document.querySelector('.preview-container');
+      const btn = document.getElementById('btnToggleFullscreen');
+      if (container) {
+        container.classList.toggle('fullscreen');
+        const isFull = container.classList.contains('fullscreen');
+        if (btn) btn.innerText = isFull ? '🗗 Minimize' : '⛶ Maximize';
       }
     }
 
