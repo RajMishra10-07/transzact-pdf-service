@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { signupSchema, loginSchema, createUserSchema } from '../schemas/auth-schemas.js';
 import { getUserRepository } from '../../database/repositories/repository-factory.js';
-import { hashPassword, verifyPassword, signJwt } from '../../utils/auth-crypto.js';
+import { hashPassword, verifyPassword, signJwt, generateSignedUrl } from '../../utils/auth-crypto.js';
 import { AuthenticationError, ConflictError, ForbiddenError } from '../../domain/errors.js';
 import { logger } from '../../utils/logger.js';
 
@@ -144,6 +144,30 @@ export class AuthController {
     res.status(200).json({
       success: true,
       users,
+    });
+  }
+
+  static async signUrl(req: Request, res: Response): Promise<void> {
+    const rawPath = (req.body?.path as string) || (req.query?.path as string);
+    if (!rawPath || typeof rawPath !== 'string') {
+      res.status(400).json({ error: { message: 'Missing required "path" parameter to sign' } });
+      return;
+    }
+
+    const tenantId = req.user?.tenantId || (req.headers['x-tenant-id'] as string);
+    const extraParams: Record<string, string> = {};
+    if (tenantId) {
+      extraParams.tenantId = tenantId;
+    }
+
+    const signed = generateSignedUrl(rawPath, 300, extraParams);
+    res.status(200).json({
+      success: true,
+      url: signed.url,
+      path: rawPath,
+      signature: signed.signature,
+      expires: signed.expires,
+      expiresInSeconds: 300,
     });
   }
 }

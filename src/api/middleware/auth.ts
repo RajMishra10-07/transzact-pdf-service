@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import { env } from '../../config/env.js';
 import { AuthenticationError } from '../../domain/errors.js';
 import { AuthUser } from '../../domain/user.js';
-import { verifyJwt } from '../../utils/auth-crypto.js';
+import { verifyJwt, verifySignedUrl } from '../../utils/auth-crypto.js';
 
 declare global {
   namespace Express {
@@ -35,28 +35,23 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     return next();
   }
 
-  const apiKeyHeader = req.headers['x-api-key'];
-  const authHeader = req.headers.authorization;
-  const queryApiKey = (req.query.apiKey as string) || (req.query['x-api-key'] as string);
-  const queryToken = req.query.token as string | undefined;
-
-  // 1. Check for JWT Bearer Token (Header or Query ?token=)
-  let jwtToken: string | undefined;
-  if (authHeader && authHeader.startsWith('Bearer ')) {
-    jwtToken = authHeader.substring(7).trim();
-  } else if (typeof queryToken === 'string' && queryToken.trim()) {
-    jwtToken = queryToken.trim();
+  // Strictly forbid credentials in query parameters (?token=, ?apiKey=, ?x-api-key=)
+  if (req.query.token !== undefined || req.query.apiKey !== undefined || req.query['x-api-key'] !== undefined) {
+    throw new AuthenticationError(
+      'Authentication via query parameters (?token, ?apiKey) is strictly forbidden. Use Authorization or x-api-key headers, or an HMAC-signed URL.'
+    );
   }
 
-  // If a JWT or Bearer string is provided:
-  if (jwtToken) {
+  const apiKeyHeader = req.headers['x-api-key'];
+  const authHeader = req.headers.authorization;
+
+  // 1. Check for JWT Bearer Token in Authorization header ONLY
+  if (authHeader && authHeader.startsWith('Bearer ')) {
+    const jwtToken = authHeader.substring(7).trim();
+
     // If it matches the M2M API_KEY directly, accept as system admin
     if (jwtToken === env.API_KEY) {
-      const tenantId =
-        (req.headers['x-tenant-id'] as string) ||
-        (req.query.tenantId as string) ||
-        'transzact-corp';
-
+      const tenantId = (req.headers['x-tenant-id'] as string) || 'transzact-corp';
       req.user = {
         id: 'm2m-service-client',
         email: 'erp-m2m@transzact.internal',
@@ -91,15 +86,10 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     }
   }
 
-  // 2. Check for Machine-to-Machine API Key (Header or Query)
-  const apiKeyCandidate = typeof apiKeyHeader === 'string' ? apiKeyHeader : queryApiKey;
-  if (apiKeyCandidate) {
-    if (apiKeyCandidate === env.API_KEY) {
-      const tenantId =
-        (req.headers['x-tenant-id'] as string) ||
-        (req.query.tenantId as string) ||
-        'transzact-corp';
-
+  // 2. Check for Machine-to-Machine API Key in x-api-key header ONLY
+  if (typeof apiKeyHeader === 'string' && apiKeyHeader.trim()) {
+    if (apiKeyHeader.trim() === env.API_KEY) {
+      const tenantId = (req.headers['x-tenant-id'] as string) || 'transzact-corp';
       req.user = {
         id: 'm2m-service-client',
         email: 'erp-m2m@transzact.internal',
@@ -116,5 +106,42 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     }
   }
 
-  throw new AuthenticationError('Authentication required: please provide a valid JWT Bearer token or API key');
+  // 3. Check for Short-Lived HMAC-Signed URL (for browser preview, download & SSE streams)
+  const signature = (req.query.signature as string) || (req.query.sig as string);
+  const expires = (req.query.expires as string) || (req.query.exp as string);
+
+  if (signature && expires) {
+    const fullPath = req.baseUrl ? `${req.baseUrl}${req.path}` : req.path;
+    const rawPath = req.originalUrl ? req.originalUrl.split('?')[0] : fullPath;
+    const isValidSig =
+      verifySignedUrl(fullPath, expires, signature) ||
+      verifySignedUrl(rawPath, expires, signature) ||
+      verifySignedUrl(req.path, expires, signature);
+
+    if (isValidSig) {
+      const tenantId =
+        (req.query.tenantId as string) ||
+        (req.headers['x-tenant-id'] as string) ||
+        'transzact-corp';
+
+      req.user = {
+        id: 'signed-url-client',
+        email: 'signed-url@transzact.internal',
+        role: 'viewer', // Read-only access for downloads and event streams
+        tenantId,
+        name: 'Signed URL Client',
+      };
+      if (!req.tenantId) {
+        req.tenantId = tenantId;
+      }
+      return next();
+    } else {
+      throw new AuthenticationError('Invalid or expired signed URL');
+    }
+  }
+
+  throw new AuthenticationError(
+    'Authentication required: please provide a valid JWT Bearer token or API key in headers, or an HMAC-signed URL'
+  );
 }
+

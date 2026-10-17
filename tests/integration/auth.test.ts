@@ -3,7 +3,8 @@ import request from 'supertest';
 import { app } from '../../src/app.js';
 import { setForceInMemoryRepositories } from '../../src/database/repositories/repository-factory.js';
 import { setForceInMemoryQueue } from '../../src/queue/queues.js';
-import { signJwt } from '../../src/utils/auth-crypto.js';
+import { env } from '../../src/config/env.js';
+import { signJwt, generateSignedUrl } from '../../src/utils/auth-crypto.js';
 
 describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
   beforeEach(() => {
@@ -384,6 +385,76 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
 
       expect(res.status).toBe(401);
       expect(res.body.error.message).toContain('expired');
+    });
+  });
+
+  describe('Query Credential Rejection & Short-Lived Signed URL Authentication', () => {
+    let userToken: string;
+
+    beforeEach(async () => {
+      const loginRes = await request(app).post('/api/v1/auth/login').send({
+        email: 'operator@transzact.com',
+        password: 'password123',
+      });
+      userToken = loginRes.body.token;
+    });
+
+    it('strictly forbids JWT tokens passed via ?token= query parameter', async () => {
+      const res = await request(app).get(`/api/v1/auth/me?token=${userToken}`);
+      expect(res.status).toBe(401);
+      expect(res.body.error.message).toContain('query parameters (?token, ?apiKey) is strictly forbidden');
+    });
+
+    it('strictly forbids API keys passed via ?apiKey= query parameter', async () => {
+      const res = await request(app).get(`/api/v1/documents/INV-001/verify?apiKey=${env.API_KEY}`);
+      expect(res.status).toBe(401);
+      expect(res.body.error.message).toContain('query parameters (?token, ?apiKey) is strictly forbidden');
+    });
+
+    it('generates a 5-minute signed URL via POST /api/v1/auth/sign-url for authenticated users', async () => {
+      const targetPath = '/api/v1/documents/INV-2026-001/download?documentType=invoice';
+      const res = await request(app)
+        .post('/api/v1/auth/sign-url')
+        .set('Authorization', `Bearer ${userToken}`)
+        .send({ path: targetPath });
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.signature).toBeDefined();
+      expect(res.body.expires).toBeDefined();
+      expect(res.body.expiresInSeconds).toBe(300);
+      expect(res.body.url).toContain('signature=');
+      expect(res.body.url).toContain('expires=');
+    });
+
+    it('allows access to endpoints using a valid HMAC-signed URL without any headers', async () => {
+      const targetPath = '/api/v1/documents/INV-SIGN-TEST/verify?documentType=invoice&tenantId=transzact-corp';
+      const signed = generateSignedUrl(targetPath, 300);
+
+      const res = await request(app).get(signed.url);
+      // Even if document is not found, authentication itself MUST succeed (status is NOT 401)
+      expect(res.status).not.toBe(401);
+    });
+
+    it('rejects expired signed URLs with 401', async () => {
+      const targetPath = '/api/v1/documents/INV-EXPIRED/verify?tenantId=transzact-corp';
+      // Signed with expiration in the past (-10 seconds)
+      const expiredSigned = generateSignedUrl(targetPath, -10);
+
+      const res = await request(app).get(expiredSigned.url);
+      expect(res.status).toBe(401);
+      expect(res.body.error.message).toContain('Invalid or expired signed URL');
+    });
+
+    it('rejects tampered signature in signed URLs with 401', async () => {
+      const targetPath = '/api/v1/documents/INV-TAMPERED/verify?tenantId=transzact-corp';
+      const signed = generateSignedUrl(targetPath, 300);
+      // Corrupt signature
+      const tamperedUrl = signed.url.replace(/signature=[^&]+/, 'signature=badc0ffeebadf00d');
+
+      const res = await request(app).get(tamperedUrl);
+      expect(res.status).toBe(401);
+      expect(res.body.error.message).toContain('Invalid or expired signed URL');
     });
   });
 });

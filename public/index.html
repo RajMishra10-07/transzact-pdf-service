@@ -956,9 +956,21 @@
       return headers;
     }
 
-    function getAuthQueryParam() {
-      const token = getAuthToken();
-      return token ? `token=${encodeURIComponent(token)}` : `apiKey=${encodeURIComponent(API_KEY)}`;
+    async function getSignedUrl(path, extraParams = {}) {
+      try {
+        const res = await fetch('/api/v1/auth/sign-url', {
+          method: 'POST',
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
+          body: JSON.stringify({ path, ...extraParams }),
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data.url;
+        }
+      } catch (err) {
+        console.warn('Could not generate signed URL from server:', err);
+      }
+      return path;
     }
 
     // --- Auth Modal Dialog Controls ---
@@ -1605,7 +1617,8 @@
           document.getElementById('metaHash').innerText = data.sha256Checksum ? data.sha256Checksum.substring(0, 16) + '...' : 'N/A';
         }
 
-        const downloadPath = `/api/v1/documents/${payload.documentId}/download?documentType=${payload.documentType}&tenantId=${payload.tenantId}&${getAuthQueryParam()}&_t=${Date.now()}`;
+        const baseDownloadPath = `/api/v1/documents/${payload.documentId}/download?documentType=${payload.documentType}&tenantId=${payload.tenantId}`;
+        const downloadPath = await getSignedUrl(baseDownloadPath);
         const frame = document.getElementById('docPreviewFrame');
         frame.removeAttribute('srcdoc');
         frame.src = downloadPath;
@@ -1764,41 +1777,44 @@
       }
     }
 
-    function startSseMonitoring(bulkJobId, tenantId) {
+    async function startSseMonitoring(bulkJobId, tenantId) {
       if (sseSource) sseSource.close();
       const sseLog = document.getElementById('sseLog');
-      sseLog.innerText += `Connecting SSE live stream: /api/v1/bulk/${bulkJobId}/events\\n`;
+      sseLog.innerText += `Connecting SSE live stream: /api/v1/bulk/${bulkJobId}/events\n`;
 
-      sseSource = new EventSource(`/api/v1/bulk/${bulkJobId}/events?${getAuthQueryParam()}&tenantId=${tenantId}`);
+      const signedEventsUrl = await getSignedUrl(`/api/v1/bulk/${bulkJobId}/events?tenantId=${tenantId}`);
+      sseSource = new EventSource(signedEventsUrl);
 
       sseSource.addEventListener('snapshot', (e) => {
         const data = JSON.parse(e.data);
-        sseLog.innerText += `[SNAPSHOT] Status: ${data.status} | Total: ${data.totalDocuments}\\n`;
+        sseLog.innerText += `[SNAPSHOT] Status: ${data.status} | Total: ${data.totalDocuments}\n`;
         updateBulkUi(data);
       });
 
       sseSource.addEventListener('progress', (e) => {
         const data = JSON.parse(e.data);
-        sseLog.innerText += `[PROGRESS] ${data.completedDocuments}/${data.totalDocuments} completed (${data.percentageComplete}%)\\n`;
+        sseLog.innerText += `[PROGRESS] ${data.completedDocuments}/${data.totalDocuments} completed (${data.percentageComplete}%)\n`;
         updateBulkUi(data);
       });
 
       sseSource.addEventListener('done', (e) => {
         const data = JSON.parse(e.data);
-        sseLog.innerText += `[DONE] Batch reached final state: ${data.status.toUpperCase()}!\\n`;
+        sseLog.innerText += `[DONE] Batch reached final state: ${data.status.toUpperCase()}!\n`;
         sseSource.close();
 
         // Reveal ZIP download & manifest buttons
         const zipBtn = document.getElementById('btnBulkDownloadZip');
-        zipBtn.href = `/api/v1/bulk/${bulkJobId}/download?${getAuthQueryParam()}&tenantId=${tenantId}`;
-        zipBtn.style.display = 'inline-flex';
+        getSignedUrl(`/api/v1/bulk/${bulkJobId}/download?tenantId=${tenantId}`).then(url => {
+          zipBtn.href = url;
+          zipBtn.style.display = 'inline-flex';
+        });
 
         const manifestBtn = document.getElementById('btnBulkManifest');
         manifestBtn.style.display = 'inline-flex';
       });
 
       sseSource.onerror = () => {
-        sseLog.innerText += `[SSE connection closed]\\n`;
+        sseLog.innerText += `[SSE connection closed]\n`;
       };
     }
 
@@ -1813,11 +1829,11 @@
 
     async function viewBulkManifest() {
       if (!currentBulkJobId) return;
-      const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/manifest?${getAuthQueryParam()}&tenantId=transzact-corp`, {
+      const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/manifest?tenantId=transzact-corp`, {
         headers: getAuthHeaders()
       });
       const manifest = await res.json();
-      alert('Manifest Details:\\n\\n' + JSON.stringify(manifest, null, 2));
+      alert('Manifest Details:\n\n' + JSON.stringify(manifest, null, 2));
     }
 
     // --- Tamper Evidence Verifier ---
@@ -1826,7 +1842,7 @@
       const tenantId = document.getElementById('verifyTenantId').value || 'transzact-corp';
       
       try {
-        const res = await fetch(`/api/v1/documents/${docId}/verify?${getAuthQueryParam()}&tenantId=${tenantId}`, {
+        const res = await fetch(`/api/v1/documents/${docId}/verify?tenantId=${tenantId}`, {
           headers: getAuthHeaders()
         });
         const data = await res.json();

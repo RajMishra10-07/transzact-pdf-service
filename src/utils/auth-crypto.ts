@@ -114,3 +114,81 @@ export function verifyJwt(token: string): JwtClaims {
   return claims;
 }
 
+/**
+ * Generates an HMAC-SHA256 signature for path + expiry (default 5 minutes / 300s).
+ */
+export function generateSignedUrl(
+  path: string,
+  expiresInSeconds = 300,
+  extraParams?: Record<string, string>
+): { url: string; signature: string; expires: number } {
+  const expires = Math.floor(Date.now() / 1000) + expiresInSeconds;
+  const [basePath, existingQuery] = path.split('?');
+  const cleanPath = basePath.startsWith('/') ? basePath : `/${basePath}`;
+  const data = `${cleanPath}${expires}`;
+  const signature = crypto
+    .createHmac('sha256', env.JWT_SECRET)
+    .update(data)
+    .digest('hex');
+
+  const queryParams = new URLSearchParams(existingQuery || '');
+  queryParams.set('expires', expires.toString());
+  queryParams.set('signature', signature);
+  if (extraParams) {
+    for (const [k, v] of Object.entries(extraParams)) {
+      if (v !== undefined && v !== null) {
+        queryParams.set(k, v);
+      }
+    }
+  }
+
+  const url = `${cleanPath}?${queryParams.toString()}`;
+  return { url, signature, expires };
+}
+
+/**
+ * Validates HMAC-SHA256 signature for path + expiry.
+ */
+export function verifySignedUrl(
+  path: string,
+  expires: string | number,
+  signature: string
+): boolean {
+  if (!expires || !signature) {
+    return false;
+  }
+  const expNum = typeof expires === 'string' ? parseInt(expires, 10) : expires;
+  if (isNaN(expNum)) {
+    return false;
+  }
+  const now = Math.floor(Date.now() / 1000);
+  if (expNum < now) {
+    return false; // Expired
+  }
+
+  const cleanPath = path.startsWith('/') ? path : `/${path}`;
+  const expected1 = crypto
+    .createHmac('sha256', env.JWT_SECRET)
+    .update(`${cleanPath}${expNum}`)
+    .digest('hex');
+
+  const expected2 = crypto
+    .createHmac('sha256', env.JWT_SECRET)
+    .update(`${cleanPath}:${expNum}`)
+    .digest('hex');
+
+  const providedBuffer = Buffer.from(signature, 'utf8');
+  const expectedBuffer1 = Buffer.from(expected1, 'utf8');
+  const expectedBuffer2 = Buffer.from(expected2, 'utf8');
+
+  const matches1 =
+    providedBuffer.length === expectedBuffer1.length &&
+    crypto.timingSafeEqual(providedBuffer, expectedBuffer1);
+
+  const matches2 =
+    providedBuffer.length === expectedBuffer2.length &&
+    crypto.timingSafeEqual(providedBuffer, expectedBuffer2);
+
+  return matches1 || matches2;
+}
+

@@ -25,3 +25,7 @@ authRouter.post(
   asyncHandler(AuthController.createUser)
 );
 
+// URL Signing for browser studio downloads, iframes, and SSE streams
+authRouter.post('/auth/sign-url', authMiddleware, asyncHandler(AuthController.signUrl));
+authRouter.get('/auth/sign-url', authMiddleware, asyncHandler(AuthController.signUrl));
+
