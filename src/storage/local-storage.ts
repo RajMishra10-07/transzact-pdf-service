@@ -3,7 +3,7 @@ import path from 'path';
 import { Readable, pipeline } from 'stream';
 import { promisify } from 'util';
 import { IStorageService, StorageObjectMetadata } from './storage-interface.js';
-import { NotFoundError } from '../domain/errors.js';
+import { NotFoundError, ForbiddenError } from '../domain/errors.js';
 import { computeBufferHash } from '../utils/hash.js';
 
 const streamPipeline = promisify(pipeline);
@@ -19,9 +19,15 @@ export class LocalStorageAdapter implements IStorageService {
   }
 
   private resolveKey(key: string): string {
-    // Sanitize key to avoid directory traversal
-    const safeKey = key.replace(/\.\./g, '');
-    return path.join(this.basePath, safeKey);
+    const normalizedKey = key.replace(/^[/\\]+/, '');
+    if (normalizedKey.includes('..')) {
+      throw new ForbiddenError('Path traversal detected in storage key');
+    }
+    const resolvedPath = path.resolve(this.basePath, normalizedKey);
+    if (!resolvedPath.startsWith(this.basePath)) {
+      throw new ForbiddenError('Path traversal outside base directory detected');
+    }
+    return resolvedPath;
   }
 
   public async save(

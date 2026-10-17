@@ -8,7 +8,7 @@ import {
 } from '../../src/database/repositories/repository-factory.js';
 import { setForceInMemoryQueue, InMemoryQueueManager } from '../../src/queue/queues.js';
 import { APP_CONSTANTS } from '../../src/config/constants.js';
-import { setStorageService } from '../../src/storage/storage-factory.js';
+import { setStorageService, getStorageService } from '../../src/storage/storage-factory.js';
 import { LocalStorageAdapter } from '../../src/storage/local-storage.js';
 import { documentService } from '../../src/services/document-service.js';
 import { ConflictError, LargeDocumentMemoryError } from '../../src/domain/errors.js';
@@ -334,4 +334,51 @@ describe('Security & Concurrency Defect Regression Tests', () => {
     expect(pendingJobs[1].jobId).toBe('bulk_item_1');
     expect(pendingJobs[1].priority).toBe(APP_CONSTANTS.JOB_PRIORITIES.LOW);
   });
+
+  it('Defect 10: Storage download strictly requires tenant context, blocks path traversal and leading slash, and isolates tenants', async () => {
+    const storage = getStorageService();
+    await storage.save('tenants/tenant_alpha/sample.pdf', Buffer.from('%PDF-1.4 test sample'), 'application/pdf');
+
+    // 1. Missing tenant context -> 403
+    const resNoTenant = await request(app)
+      .get('/api/v1/storage/download?key=tenants/tenant_alpha/sample.pdf')
+      .set('x-api-key', validApiKey);
+    expect(resNoTenant.status).toBe(403);
+    expect(resNoTenant.body.error.message).toContain('Tenant ID is required');
+
+    // 2. Path traversal with .. -> 403
+    const resTraversal = await request(app)
+      .get('/api/v1/storage/download?key=tenants/tenant_alpha/../secret.env')
+      .set('x-api-key', validApiKey)
+      .set('x-tenant-id', 'tenant_alpha');
+    expect(resTraversal.status).toBe(403);
+    expect(resTraversal.body.error.message).toContain('path traversal');
+
+    // 3. Absolute path with leading slash -> 403
+    const resLeadingSlash = await request(app)
+      .get('/api/v1/storage/download?key=/etc/passwd')
+      .set('x-api-key', validApiKey)
+      .set('x-tenant-id', 'tenant_alpha');
+    expect(resLeadingSlash.status).toBe(403);
+    expect(resLeadingSlash.body.error.message).toContain('path traversal sequences ("..") and leading slashes');
+
+    // 4. Access key belonging to different tenant -> 403
+    const resWrongTenant = await request(app)
+      .get('/api/v1/storage/download?key=tenants/tenant_victim/invoice.pdf')
+      .set('x-api-key', validApiKey)
+      .set('x-tenant-id', 'tenant_attacker');
+    expect(resWrongTenant.status).toBe(403);
+    expect(resWrongTenant.body.error.message).toContain('Access to storage key belongs to a different tenant');
+
+    // 5. Authorized download within tenant boundary -> 200
+    const resValid = await request(app)
+      .get('/api/v1/storage/download?key=tenants/tenant_alpha/sample.pdf')
+      .set('x-api-key', validApiKey)
+      .set('x-tenant-id', 'tenant_alpha')
+      .buffer(true);
+    expect(resValid.status).toBe(200);
+    const content = resValid.body instanceof Buffer ? resValid.body.toString('utf8') : resValid.text;
+    expect(content).toBe('%PDF-1.4 test sample');
+  });
 });
+

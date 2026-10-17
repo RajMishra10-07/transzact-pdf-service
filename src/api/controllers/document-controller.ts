@@ -128,14 +128,43 @@ export class DocumentController {
   }
 
   public static async storageDownload(req: Request, res: Response): Promise<void> {
-    const key = req.query.key as string;
-    if (!key) {
+    const rawKey = req.query.key;
+    if (!rawKey || typeof rawKey !== 'string' || !rawKey.trim()) {
       res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Storage key query parameter is required' } });
       return;
     }
+    const key = rawKey.trim();
 
-    if (req.tenantId && !key.startsWith(`tenants/${req.tenantId}/`)) {
-      throw new ForbiddenError('Access to storage key belongs to a different tenant');
+    // 1. Always require a tenant
+    if (!req.tenantId) {
+      throw new ForbiddenError('Tenant ID is required to access storage download');
+    }
+
+    // 2. Reject keys containing ".." or starting with "/" (including URL-decoded variants)
+    let decodedKey = key;
+    try {
+      decodedKey = decodeURIComponent(key);
+    } catch {}
+
+    if (
+      key.includes('..') ||
+      key.startsWith('/') ||
+      key.startsWith('\\') ||
+      decodedKey.includes('..') ||
+      decodedKey.startsWith('/') ||
+      decodedKey.startsWith('\\')
+    ) {
+      throw new ForbiddenError(
+        'Invalid storage key: path traversal sequences ("..") and leading slashes are strictly forbidden'
+      );
+    }
+
+    // 3. Check the key belongs to the caller's tenant
+    const expectedPrefix = `tenants/${req.tenantId}/`;
+    if (!key.startsWith(expectedPrefix)) {
+      throw new ForbiddenError(
+        `Access to storage key belongs to a different tenant: key must start with '${expectedPrefix}'`
+      );
     }
 
     const storage = getStorageService();
