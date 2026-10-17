@@ -1,6 +1,7 @@
 import { z } from 'zod';
 
 export const userRoleSchema = z.enum(['admin', 'operator', 'viewer']);
+export const publicSignupRoleSchema = z.enum(['operator', 'viewer']);
 
 export const signupSchema = z.object({
   email: z
@@ -18,7 +19,7 @@ export const signupSchema = z.object({
     .max(100)
     .trim()
     .default('ERP User'),
-  role: userRoleSchema.default('operator'),
+  role: publicSignupRoleSchema.default('operator'),
   tenantId: z
     .string()
     .min(1, 'Tenant ID cannot be empty')

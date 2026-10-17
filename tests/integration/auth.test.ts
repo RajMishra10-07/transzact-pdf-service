@@ -70,6 +70,20 @@ describe('Role-Based Access Control (RBAC) & JWT Authentication', () => {
 
       expect(res.status).toBe(400);
     });
+
+    it('should reject registration attempting to pick admin role with 400 Validation Error', async () => {
+      const res = await request(app)
+        .post('/api/v1/auth/signup')
+        .send({
+          email: 'hacker@malicious.com',
+          password: 'securePassword123!',
+          name: 'Privilege Escalator',
+          role: 'admin',
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.error).toBeDefined();
+    });
   });
 
   describe('User Authentication (Login)', () => {
