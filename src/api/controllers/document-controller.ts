@@ -3,6 +3,7 @@ import { generateDocumentSchema } from '../schemas/document-schemas.js';
 import { documentService } from '../../services/document-service.js';
 import { integrityService } from '../../services/integrity-service.js';
 import { getStorageService } from '../../storage/storage-factory.js';
+import { getAuditRepository } from '../../database/repositories/repository-factory.js';
 import { ForbiddenError, NotFoundError } from '../../domain/errors.js';
 import { DocumentType } from '../../domain/document.js';
 
@@ -166,5 +167,33 @@ export class DocumentController {
     res.setHeader('Accept-Ranges', 'bytes');
     const stream = await storage.getStream(key);
     stream.pipe(res);
+  }
+
+  public static async verify(req: Request, res: Response): Promise<void> {
+    const { documentId } = req.params;
+    const documentType = (req.query.documentType as DocumentType) || 'invoice';
+    const tenantId = req.tenantId;
+
+    if (!tenantId) {
+      throw new ForbiddenError('Tenant ID must be supplied via x-tenant-id header or query parameter');
+    }
+
+    const result = await integrityService.verifyDocumentIntegrity(
+      tenantId,
+      documentType,
+      documentId,
+      (req.headers['x-user-id'] as string) || 'verifier_client'
+    );
+
+    const auditRepo = getAuditRepository();
+    const auditLogs = await auditRepo.findAuditRecords(tenantId, documentId);
+
+    res.status(200).json({
+      documentId,
+      tenantId,
+      documentType,
+      ...result,
+      auditLogs,
+    });
   }
 }

@@ -15,6 +15,7 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
 
   const apiKeyHeader = req.headers['x-api-key'];
   const authHeader = req.headers.authorization;
+  const queryApiKey = (req.query.apiKey as string) || (req.query['x-api-key'] as string);
 
   let providedKey: string | undefined;
 
@@ -22,6 +23,8 @@ export function authMiddleware(req: Request, res: Response, next: NextFunction):
     providedKey = apiKeyHeader;
   } else if (authHeader && authHeader.startsWith('Bearer ')) {
     providedKey = authHeader.substring(7);
+  } else if (typeof queryApiKey === 'string') {
+    providedKey = queryApiKey;
   }
 
   if (!providedKey || providedKey !== env.API_KEY) {

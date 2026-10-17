@@ -5,7 +5,7 @@
   "type": "module",
   "main": "dist/server.js",
   "scripts": {
-    "build": "tsc && node -e \"const fs = require('fs'); fs.cpSync('src/templates', 'dist/templates', { recursive: true }); fs.cpSync('src/database/migrations', 'dist/database/migrations', { recursive: true });\"",
+    "build": "tsc && node -e \"const fs = require('fs'); fs.cpSync('src/templates', 'dist/templates', { recursive: true }); fs.cpSync('src/database/migrations', 'dist/database/migrations', { recursive: true }); if (fs.existsSync('public')) fs.cpSync('public', 'dist/public', { recursive: true });\"",
     "start": "node dist/server.js",
     "start:worker": "node dist/workers/index.js",
     "dev": "tsx watch src/server.ts",

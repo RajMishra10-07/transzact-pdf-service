@@ -19,6 +19,10 @@ function getSampleData(fileName: string): Record<string, unknown> {
 
 // 1. Interactive Dashboard Playground at root '/'
 previewRouter.get('/', (req: Request, res: Response) => {
+  const publicIndex = path.resolve(process.cwd(), 'public', 'index.html');
+  if (fs.existsSync(publicIndex)) {
+    return res.sendFile(publicIndex);
+  }
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
   res.send(`<!DOCTYPE html>
 <html lang="en">

@@ -1,0 +1,1085 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>TranZact PDF Studio & Microservice Portal</title>
+  <style>
+    :root {
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --success: #10b981;
+      --success-light: #ecfdf5;
+      --warning: #f59e0b;
+      --danger: #ef4444;
+      --bg: #f8fafc;
+      --card-bg: #ffffff;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --border: #e2e8f0;
+      --border-dark: #cbd5e1;
+      --radius: 8px;
+      --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.07), 0 2px 4px -2px rgba(0, 0, 0, 0.05);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.5;
+      font-size: 14px;
+    }
+
+    /* Header */
+    header {
+      background: #1e293b;
+      color: white;
+      padding: 14px 24px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand h1 { font-size: 18px; font-weight: 700; letter-spacing: -0.3px; }
+    .brand span { font-size: 11px; background: #3b82f6; padding: 2px 8px; border-radius: 9999px; font-weight: 600; }
+    .header-status { display: flex; align-items: center; gap: 16px; font-size: 13px; }
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 10px;
+      border-radius: 9999px;
+      font-size: 12px;
+      font-weight: 600;
+      background: #10b981;
+      color: white;
+    }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: white; animation: pulse 2s infinite; }
+    @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
+
+    /* Nav Tabs */
+    .nav-tabs {
+      display: flex;
+      background: white;
+      border-bottom: 1px solid var(--border);
+      padding: 0 24px;
+      gap: 8px;
+    }
+    .nav-tab {
+      padding: 12px 18px;
+      font-weight: 600;
+      color: var(--text-muted);
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .nav-tab:hover { color: var(--primary); }
+    .nav-tab.active { color: var(--primary); border-bottom-color: var(--primary); }
+
+    /* Main Container */
+    .main-container {
+      max-width: 1440px;
+      margin: 20px auto;
+      padding: 0 20px 40px;
+    }
+    .tab-pane { display: none; }
+    .tab-pane.active { display: block; }
+
+    /* Layout Grids */
+    .two-col-layout {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 20px;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .two-col-layout { grid-template-columns: 1fr; }
+    }
+
+    /* Cards */
+    .card {
+      background: var(--card-bg);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      box-shadow: var(--shadow);
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .card-title {
+      font-size: 15px;
+      font-weight: 700;
+      color: #1e293b;
+      margin-bottom: 14px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    /* Forms */
+    .form-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .form-group { display: flex; flex-direction: column; gap: 4px; }
+    label { font-size: 12px; font-weight: 600; color: #475569; }
+    input, select, textarea {
+      padding: 8px 12px;
+      border: 1px solid var(--border-dark);
+      border-radius: 6px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color 0.15s;
+      background: white;
+      font-family: inherit;
+    }
+    input:focus, select:focus, textarea:focus {
+      border-color: var(--primary);
+      box-shadow: 0 0 0 2px var(--primary-light);
+    }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 13px;
+      border: none;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-primary { background: var(--primary); color: white; }
+    .btn-primary:hover { background: var(--primary-hover); }
+    .btn-secondary { background: #f1f5f9; color: #334155; border: 1px solid var(--border); }
+    .btn-secondary:hover { background: #e2e8f0; }
+    .btn-success { background: var(--success); color: white; }
+    .btn-success:hover { background: #059669; }
+    .btn-danger { background: #fee2e2; color: #b91c1c; }
+    .btn-danger:hover { background: #fecaca; }
+    .btn-sm { padding: 4px 10px; font-size: 12px; }
+
+    /* Items Table */
+    .items-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 10px;
+      font-size: 12px;
+    }
+    .items-table th {
+      background: #f1f5f9;
+      text-align: left;
+      padding: 8px 10px;
+      border: 1px solid var(--border);
+      font-weight: 600;
+      color: #475569;
+    }
+    .items-table td {
+      padding: 6px 8px;
+      border: 1px solid var(--border);
+    }
+    .items-table input { width: 100%; padding: 4px 6px; font-size: 12px; }
+
+    /* Summary Box */
+    .summary-box {
+      background: #f8fafc;
+      border: 1px solid var(--border);
+      border-radius: 6px;
+      padding: 14px;
+      margin-top: 14px;
+      margin-left: auto;
+      max-width: 320px;
+    }
+    .summary-line {
+      display: flex;
+      justify-content: space-between;
+      padding: 4px 0;
+      font-size: 12px;
+      color: #475569;
+    }
+    .summary-line.total {
+      font-size: 14px;
+      font-weight: 700;
+      color: #0f172a;
+      border-top: 1px solid var(--border-dark);
+      padding-top: 8px;
+      margin-top: 4px;
+    }
+
+    /* Live Preview Frame */
+    .preview-container {
+      position: sticky;
+      top: 80px;
+    }
+    .preview-frame {
+      width: 100%;
+      height: 800px;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      background: white;
+      box-shadow: var(--shadow);
+    }
+    .badge {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+    }
+    .badge-success { background: #dcfce7; color: #166534; }
+    .badge-info { background: #e0f2fe; color: #075985; }
+    .badge-warning { background: #fef3c7; color: #92400e; }
+
+    /* Progress bar */
+    .progress-bar-bg {
+      width: 100%;
+      height: 12px;
+      background: #e2e8f0;
+      border-radius: 9999px;
+      overflow: hidden;
+      margin: 12px 0;
+    }
+    .progress-bar-fill {
+      height: 100%;
+      background: var(--primary);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+
+    /* Console logs */
+    .log-terminal {
+      background: #0f172a;
+      color: #38bdf8;
+      font-family: monospace;
+      font-size: 12px;
+      padding: 14px;
+      border-radius: 6px;
+      height: 240px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+    }
+
+    /* Stat Cards */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: white;
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 16px;
+      box-shadow: var(--shadow);
+    }
+    .stat-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .stat-val { font-size: 24px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+  </style>
+</head>
+<body>
+
+  <!-- Top Header -->
+  <header>
+    <div class="brand">
+      <h1>TranZact PDF Studio</h1>
+      <span>v1.0.0 Microservice</span>
+    </div>
+    <div class="header-status">
+      <div id="serviceStatus" class="status-pill">
+        <span class="status-dot"></span> <span id="statusText">Checking...</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="checkHealth()">🔄 Refresh</button>
+    </div>
+  </header>
+
+  <!-- Navigation Tabs -->
+  <div class="nav-tabs">
+    <button class="nav-tab active" onclick="switchTab('single')">📑 Single Document Generator</button>
+    <button class="nav-tab" onclick="switchTab('bulk')">📦 Bulk Batch Processing (SSE Live)</button>
+    <button class="nav-tab" onclick="switchTab('audit')">🛡️ Tamper-Evidence & Audit Verifier</button>
+    <button class="nav-tab" onclick="switchTab('metrics')">📊 System Observability & Health</button>
+  </div>
+
+  <div class="main-container">
+
+    <!-- TAB 1: SINGLE DOCUMENT GENERATOR -->
+    <div id="tab-single" class="tab-pane active">
+      <div class="two-col-layout">
+        
+        <!-- Left: Form Controls -->
+        <div>
+          <div class="card">
+            <div class="card-title">
+              <span>Document Configuration</span>
+              <div style="display: flex; gap: 8px;">
+                <button class="btn btn-secondary btn-sm" onclick="loadSampleInvoice()">⚡ Sample Invoice</button>
+                <button class="btn btn-secondary btn-sm" onclick="loadSamplePO()">⚡ Sample PO</button>
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Document Type</label>
+                <select id="docType" onchange="handleDocTypeChange()">
+                  <option value="invoice">GST Tax Invoice</option>
+                  <option value="purchase_order">Purchase Order</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Document ID / Number</label>
+                <input type="text" id="docId" value="INV-2026-001">
+              </div>
+              <div class="form-group">
+                <label>Tenant ID</label>
+                <input type="text" id="tenantId" value="tenant-acme">
+              </div>
+            </div>
+
+            <div class="form-row">
+              <div class="form-group">
+                <label>Document Date</label>
+                <input type="date" id="docDate" value="2026-10-16">
+              </div>
+              <div class="form-group">
+                <label>Due / Delivery Date</label>
+                <input type="date" id="docDueDate" value="2026-11-16">
+              </div>
+              <div class="form-group">
+                <label>Currency</label>
+                <select id="docCurrency">
+                  <option value="INR">INR (₹)</option>
+                  <option value="USD">USD ($)</option>
+                  <option value="EUR">EUR (€)</option>
+                </select>
+              </div>
+            </div>
+          </div>
+
+          <!-- Parties Card -->
+          <div class="card">
+            <div class="card-title">Supplier & Customer Information</div>
+            
+            <h4 style="font-size: 13px; color: var(--primary); margin-bottom: 8px;">Supplier / Issuer Details</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Company Name</label>
+                <input type="text" id="suppName" value="Acme Industrial Technologies Pvt Ltd">
+              </div>
+              <div class="form-group">
+                <label>GSTIN</label>
+                <input type="text" id="suppGstin" value="27AABCA1234F1Z6">
+              </div>
+              <div class="form-group">
+                <label>State & Pincode</label>
+                <input type="text" id="suppLocation" value="Maharashtra - 400705">
+              </div>
+            </div>
+
+            <h4 style="font-size: 13px; color: var(--primary); margin: 12px 0 8px;">Customer / Buyer Details</h4>
+            <div class="form-row">
+              <div class="form-group">
+                <label>Customer Name</label>
+                <input type="text" id="custName" value="Bharat Heavy Manufacturing Ltd">
+              </div>
+              <div class="form-group">
+                <label>GSTIN</label>
+                <input type="text" id="custGstin" value="02BBBBB1111B2Z4">
+              </div>
+              <div class="form-group">
+                <label>State & Pincode</label>
+                <input type="text" id="custLocation" value="Himachal Pradesh - 173205">
+              </div>
+            </div>
+          </div>
+
+          <!-- Items Card -->
+          <div class="card">
+            <div class="card-title">
+              <span>Line Items</span>
+              <button class="btn btn-secondary btn-sm" onclick="addItemRow()">+ Add Item</button>
+            </div>
+
+            <table class="items-table" id="itemsTable">
+              <thead>
+                <tr>
+                  <th style="width: 35%;">Description</th>
+                  <th style="width: 15%;">HSN/SAC</th>
+                  <th style="width: 12%;">Qty</th>
+                  <th style="width: 18%;">Unit Price</th>
+                  <th style="width: 12%;">GST %</th>
+                  <th style="width: 8%;"></th>
+                </tr>
+              </thead>
+              <tbody id="itemsBody">
+                <!-- Dynamically generated rows -->
+              </tbody>
+            </table>
+
+            <!-- Calculated Summary -->
+            <div class="summary-box">
+              <div class="summary-line">
+                <span>Taxable Subtotal:</span>
+                <span id="sumSubtotal">₹ 0.00</span>
+              </div>
+              <div class="summary-line">
+                <span>Total GST Tax:</span>
+                <span id="sumTax">₹ 0.00</span>
+              </div>
+              <div class="summary-line total">
+                <span>Grand Total:</span>
+                <span id="sumTotal">₹ 0.00</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Action Buttons -->
+          <div class="card" style="display: flex; gap: 12px; align-items: center; justify-content: space-between;">
+            <div style="display: flex; gap: 12px; align-items: center;">
+              <label style="display: flex; align-items: center; gap: 6px; cursor: pointer;">
+                <input type="checkbox" id="preferSync" checked>
+                <span>Prefer Synchronous (&lt; 4.5s)</span>
+              </label>
+            </div>
+            <div style="display: flex; gap: 10px;">
+              <button class="btn btn-secondary" onclick="viewTemplateHtml()">👁️ HTML Preview</button>
+              <button class="btn btn-primary" id="btnGenerate" onclick="generatePdf()">🚀 Generate PDF</button>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Right: Live Preview Panel -->
+        <div class="preview-container">
+          <div class="card" style="margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong>Generated Document Status:</strong>
+                <span id="renderStatusBadge" class="badge badge-info" style="margin-left: 6px;">Ready</span>
+              </div>
+              <div style="display: flex; gap: 8px;">
+                <a id="btnDownload" class="btn btn-success btn-sm" href="#" download style="display: none;">⬇️ Download PDF</a>
+                <button id="btnVerifyIntegrity" class="btn btn-secondary btn-sm" onclick="verifyCurrentDoc()" style="display: none;">🛡️ Verify SHA-256</button>
+              </div>
+            </div>
+            <div id="renderMeta" style="font-size: 11px; color: var(--text-muted); margin-top: 6px; display: none;">
+              Render Time: <span id="metaDuration">0ms</span> | Size: <span id="metaSize">0 KB</span> | SHA-256: <code id="metaHash" style="font-size: 10px; background:#e2e8f0; padding:1px 4px; border-radius:3px;"></code>
+            </div>
+          </div>
+
+          <iframe id="docPreviewFrame" class="preview-frame" src="/preview/invoice"></iframe>
+        </div>
+
+      </div>
+    </div>
+
+    <!-- TAB 2: BULK BATCH PROCESSING -->
+    <div id="tab-bulk" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Bulk Document Batch Orchestration (Up to 100 Documents)</div>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          Submit multi-document workloads to background queues. Monitor live progress via Server-Sent Events (SSE) and download streaming ZIP archives with HTTP Range support.
+        </p>
+
+        <div class="form-row" style="max-width: 500px;">
+          <div class="form-group">
+            <label>Batch Size</label>
+            <select id="bulkSize">
+              <option value="3">3 Documents (Quick Test)</option>
+              <option value="5">5 Documents (Mixed Invoices & POs)</option>
+              <option value="10">10 Documents (Standard Batch)</option>
+              <option value="25">25 Documents (High Throughput)</option>
+            </select>
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="launchBulkBatch()">🚀 Start Bulk Batch</button>
+          </div>
+        </div>
+
+        <!-- Live Progress Section -->
+        <div id="bulkProgressSection" style="margin-top: 24px; display: none;">
+          <div style="display: flex; justify-content: space-between; font-weight: 600; font-size: 13px;">
+            <span>Batch Progress: <span id="bulkPercentText">0%</span></span>
+            <span id="bulkJobIdDisplay" style="color: var(--text-muted); font-size: 12px;"></span>
+          </div>
+
+          <div class="progress-bar-bg">
+            <div id="bulkProgressBar" class="progress-bar-fill"></div>
+          </div>
+
+          <div class="stat-grid" style="margin-top: 16px;">
+            <div class="stat-card">
+              <div class="stat-label">Total Documents</div>
+              <div class="stat-val" id="bulkTotal">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Completed</div>
+              <div class="stat-val" id="bulkCompleted" style="color: var(--success);">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Queued / Processing</div>
+              <div class="stat-val" id="bulkPending" style="color: var(--primary);">0</div>
+            </div>
+            <div class="stat-card">
+              <div class="stat-label">Failed</div>
+              <div class="stat-val" id="bulkFailed" style="color: var(--danger);">0</div>
+            </div>
+          </div>
+
+          <div style="margin: 16px 0; display: flex; gap: 10px;">
+            <a id="btnBulkDownloadZip" class="btn btn-success" href="#" style="display: none;" download>📦 Download ZIP Archive</a>
+            <button id="btnBulkManifest" class="btn btn-secondary" onclick="viewBulkManifest()" style="display: none;">📋 View Batch Manifest</button>
+          </div>
+
+          <label style="margin-top: 12px; display: block;">Live Server-Sent Events (SSE) Stream:</label>
+          <div class="log-terminal" id="sseLog">Connecting to event stream...</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 3: TAMPER EVIDENCE & AUDIT VERIFIER -->
+    <div id="tab-audit" class="tab-pane">
+      <div class="card">
+        <div class="card-title">Cryptographic SHA-256 Tamper-Evidence Verifier</div>
+        <p style="color: var(--text-muted); margin-bottom: 16px;">
+          Validates that physical PDF bytes stored in storage match the tamper-evident hash stored in the database. Also displays the append-only audit trail.
+        </p>
+
+        <div class="form-row" style="max-width: 600px;">
+          <div class="form-group">
+            <label>Document ID</label>
+            <input type="text" id="verifyDocId" value="INV-2026-001">
+          </div>
+          <div class="form-group">
+            <label>Tenant ID</label>
+            <input type="text" id="verifyTenantId" value="tenant-acme">
+          </div>
+          <div class="form-group" style="justify-content: flex-end;">
+            <button class="btn btn-primary" onclick="executeIntegrityVerification()">🛡️ Verify Document</button>
+          </div>
+        </div>
+
+        <div id="verifyResultCard" style="display: none; margin-top: 20px;">
+          <div id="verifyStatusBox" style="padding: 14px; border-radius: 6px; font-weight: 600; margin-bottom: 16px;"></div>
+          
+          <div class="card">
+            <div class="card-title">Audit Trail History (Append-Only)</div>
+            <table class="items-table" id="auditTable">
+              <thead>
+                <tr>
+                  <th>Timestamp</th>
+                  <th>Action</th>
+                  <th>Performed By</th>
+                  <th>SHA-256 Checksum</th>
+                </tr>
+              </thead>
+              <tbody id="auditBody"></tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- TAB 4: SYSTEM OBSERVABILITY & HEALTH -->
+    <div id="tab-metrics" class="tab-pane">
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">System Uptime</div>
+          <div class="stat-val" id="metricUptime">0s</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Requests</div>
+          <div class="stat-val" id="metricRequests">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Avg Render Latency</div>
+          <div class="stat-val" id="metricLatency">0ms</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Memory (RSS)</div>
+          <div class="stat-val" id="metricMemory">0 MB</div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Live Operational Metrics JSON Snapshot</div>
+        <pre class="log-terminal" id="rawMetricsJson" style="height: 350px;">Fetching metrics...</pre>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const API_KEY = 'erp-service-secret-key-change-in-production';
+    let currentBulkJobId = null;
+    let sseSource = null;
+
+    // --- Tab Switching ---
+    function switchTab(tabKey) {
+      document.querySelectorAll('.nav-tab').forEach(t => t.classList.remove('active'));
+      document.querySelectorAll('.tab-pane').forEach(p => p.classList.remove('active'));
+      
+      const tabBtn = Array.from(document.querySelectorAll('.nav-tab')).find(b => b.getAttribute('onclick').includes(tabKey));
+      if (tabBtn) tabBtn.classList.add('active');
+      
+      const pane = document.getElementById('tab-' + tabKey);
+      if (pane) pane.classList.add('active');
+
+      if (tabKey === 'metrics') fetchMetrics();
+    }
+
+    // --- Line Items Editor ---
+    let items = [
+      { description: 'High Precision Lathe Tool Holder ISO 40', hsnSacCode: '8207', quantity: 10, unit: 'PCS', unitPrice: 4500, gstRate: 18 },
+      { description: 'Tungsten Carbide Milling Inserts (Pack of 10)', hsnSacCode: '8209', quantity: 5, unit: 'PACK', unitPrice: 2200, gstRate: 18 }
+    ];
+
+    function renderItems() {
+      const tbody = document.getElementById('itemsBody');
+      tbody.innerHTML = '';
+      
+      let subtotal = 0;
+      let totalTax = 0;
+
+      items.forEach((item, index) => {
+        const taxable = item.quantity * item.unitPrice;
+        const tax = taxable * (item.gstRate / 100);
+        subtotal += taxable;
+        totalTax += tax;
+
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td><input type="text" value="${item.description}" oninput="updateItem(${index}, 'description', this.value)"></td>
+          <td><input type="text" value="${item.hsnSacCode}" oninput="updateItem(${index}, 'hsnSacCode', this.value)"></td>
+          <td><input type="number" min="1" value="${item.quantity}" oninput="updateItem(${index}, 'quantity', Number(this.value))"></td>
+          <td><input type="number" step="0.01" value="${item.unitPrice}" oninput="updateItem(${index}, 'unitPrice', Number(this.value))"></td>
+          <td>
+            <select onchange="updateItem(${index}, 'gstRate', Number(this.value))">
+              <option value="0" ${item.gstRate === 0 ? 'selected' : ''}>0%</option>
+              <option value="5" ${item.gstRate === 5 ? 'selected' : ''}>5%</option>
+              <option value="12" ${item.gstRate === 12 ? 'selected' : ''}>12%</option>
+              <option value="18" ${item.gstRate === 18 ? 'selected' : ''}>18%</option>
+              <option value="28" ${item.gstRate === 28 ? 'selected' : ''}>28%</option>
+            </select>
+          </td>
+          <td style="text-align: center;">
+            <button class="btn btn-danger btn-sm" onclick="removeItemRow(${index})">✕</button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+
+      const grandTotal = subtotal + totalTax;
+      document.getElementById('sumSubtotal').innerText = '₹ ' + subtotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('sumTax').innerText = '₹ ' + totalTax.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+      document.getElementById('sumTotal').innerText = '₹ ' + grandTotal.toLocaleString('en-IN', { minimumFractionDigits: 2 });
+    }
+
+    function updateItem(index, field, value) {
+      items[index][field] = value;
+      renderItems();
+    }
+
+    function addItemRow() {
+      items.push({ description: 'New Material / Component', hsnSacCode: '8483', quantity: 1, unit: 'PCS', unitPrice: 1000, gstRate: 18 });
+      renderItems();
+    }
+
+    function removeItemRow(index) {
+      if (items.length <= 1) {
+        alert('A document requires at least one line item.');
+        return;
+      }
+      items.splice(index, 1);
+      renderItems();
+    }
+
+    // --- Preset Loaders ---
+    function loadSampleInvoice() {
+      document.getElementById('docType').value = 'invoice';
+      document.getElementById('docId').value = 'INV-2026-001';
+      document.getElementById('suppName').value = 'Acme Industrial Technologies Pvt Ltd';
+      document.getElementById('suppGstin').value = '27AABCA1234F1Z6';
+      document.getElementById('custName').value = 'Bharat Heavy Manufacturing Ltd';
+      document.getElementById('custGstin').value = '02BBBBB1111B2Z4';
+      items = [
+        { description: 'High Precision CNC Lathe Tool Holder ISO 40', hsnSacCode: '8207', quantity: 10, unit: 'PCS', unitPrice: 4500, gstRate: 18 },
+        { description: 'Tungsten Carbide Milling Inserts (Pack of 10)', hsnSacCode: '8209', quantity: 5, unit: 'PACK', unitPrice: 2200, gstRate: 18 }
+      ];
+      renderItems();
+      document.getElementById('docPreviewFrame').src = '/preview/invoice';
+    }
+
+    function loadSamplePO() {
+      document.getElementById('docType').value = 'purchase_order';
+      document.getElementById('docId').value = 'PO-2026-550';
+      document.getElementById('suppName').value = 'Acme Industrial Technologies Pvt Ltd';
+      document.getElementById('custName').value = 'Tata Special Steel Alloys Ltd';
+      items = [
+        { description: 'Cold Rolled Steel Coil Grade 304 (2.5mm thickness)', hsnSacCode: '7219', quantity: 1500, unit: 'KGS', unitPrice: 185, gstRate: 18 }
+      ];
+      renderItems();
+      document.getElementById('docPreviewFrame').src = '/preview/purchase-order';
+    }
+
+    function handleDocTypeChange() {
+      const type = document.getElementById('docType').value;
+      if (type === 'invoice') loadSampleInvoice();
+      else loadSamplePO();
+    }
+
+    function viewTemplateHtml() {
+      const type = document.getElementById('docType').value;
+      document.getElementById('docPreviewFrame').src = type === 'invoice' ? '/preview/invoice' : '/preview/purchase-order';
+    }
+
+    // --- PDF Generation API ---
+    async function generatePdf() {
+      const btn = document.getElementById('btnGenerate');
+      btn.disabled = true;
+      btn.innerText = '⏳ Rendering PDF...';
+
+      const docType = document.getElementById('docType').value;
+      const documentId = document.getElementById('docId').value;
+      const tenantId = document.getElementById('tenantId').value;
+      const preferSync = document.getElementById('preferSync').checked;
+
+      let subtotal = 0;
+      let totalTax = 0;
+      const formattedItems = items.map(item => {
+        const taxable = item.quantity * item.unitPrice;
+        const tax = taxable * (item.gstRate / 100);
+        subtotal += taxable;
+        totalTax += tax;
+        return {
+          description: item.description,
+          hsnSacCode: item.hsnSacCode,
+          quantity: item.quantity,
+          unit: item.unit,
+          unitPrice: item.unitPrice,
+          taxableAmount: taxable,
+          igstRate: item.gstRate,
+          igstAmount: tax,
+          totalAmount: taxable + tax
+        };
+      });
+
+      const payload = {
+        documentType: docType,
+        documentId: documentId,
+        tenantId: tenantId,
+        options: { preferSync },
+        data: {
+          [docType === 'invoice' ? 'invoiceNumber' : 'poNumber']: documentId,
+          [docType === 'invoice' ? 'invoiceDate' : 'poDate']: document.getElementById('docDate').value,
+          dueDate: document.getElementById('docDueDate').value,
+          currency: document.getElementById('docCurrency').value,
+          supplier: {
+            name: document.getElementById('suppName').value,
+            addressLine1: 'Plot 102, MIDC Industrial Area',
+            city: 'Navi Mumbai',
+            state: 'Maharashtra',
+            pincode: '400705',
+            gstin: document.getElementById('suppGstin').value,
+          },
+          buyer: {
+            name: document.getElementById('suppName').value,
+            addressLine1: 'Plot 102, MIDC Industrial Area',
+            city: 'Navi Mumbai',
+            state: 'Maharashtra',
+            pincode: '400705',
+          },
+          customer: {
+            name: document.getElementById('custName').value,
+            addressLine1: 'Baddi Industrial Estate',
+            city: 'Solan',
+            state: 'Himachal Pradesh',
+            pincode: '173205',
+            gstin: document.getElementById('custGstin').value,
+          },
+          vendor: {
+            name: document.getElementById('custName').value,
+            addressLine1: 'Jamshedpur Works',
+            city: 'Jamshedpur',
+            state: 'Jharkhand',
+            pincode: '831001',
+          },
+          shippingAddress: {
+            name: 'Central Warehouse Depot',
+            addressLine1: 'Plot 40, Logistics Park',
+            city: 'Bhiwandi',
+            state: 'Maharashtra',
+            pincode: '421302',
+          },
+          billingAddress: {
+            name: document.getElementById('suppName').value,
+            addressLine1: 'Plot 102, MIDC Industrial Area',
+            city: 'Navi Mumbai',
+            state: 'Maharashtra',
+            pincode: '400705',
+          },
+          items: formattedItems,
+          subtotal: subtotal,
+          totalIgst: totalTax,
+          totalTax: totalTax,
+          grandTotal: subtotal + totalTax,
+          grandTotalInWords: 'Rupees Only',
+          bankDetails: {
+            bankName: 'HDFC Bank',
+            accountNumber: '50200012345678',
+            ifscCode: 'HDFC0000123',
+            branchName: 'MIDC Branch'
+          },
+          termsAndConditions: 'Payment due within 30 days.'
+        }
+      };
+
+      try {
+        const res = await fetch('/api/v1/documents/generate', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'x-tenant-id': tenantId
+          },
+          body: JSON.stringify(payload)
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Generation failed');
+
+        document.getElementById('renderStatusBadge').innerText = data.status.toUpperCase();
+        document.getElementById('renderStatusBadge').className = 'badge badge-success';
+        
+        // Show metadata
+        if (data.fileSizeBytes) {
+          document.getElementById('renderMeta').style.display = 'block';
+          document.getElementById('metaSize').innerText = (data.fileSizeBytes / 1024).toFixed(1) + ' KB';
+          document.getElementById('metaHash').innerText = data.sha256Checksum ? data.sha256Checksum.substring(0, 16) + '...' : 'N/A';
+        }
+
+        const downloadPath = `/api/v1/documents/${documentId}/download?documentType=${docType}&tenantId=${tenantId}&apiKey=${API_KEY}`;
+        document.getElementById('docPreviewFrame').src = downloadPath;
+        
+        const btnDownload = document.getElementById('btnDownload');
+        btnDownload.href = downloadPath;
+        btnDownload.style.display = 'inline-flex';
+
+        const btnVerify = document.getElementById('btnVerifyIntegrity');
+        btnVerify.style.display = 'inline-flex';
+
+      } catch (err) {
+        alert('Generation Error: ' + err.message);
+        document.getElementById('renderStatusBadge').innerText = 'FAILED';
+        document.getElementById('renderStatusBadge').className = 'badge badge-warning';
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Generate PDF';
+      }
+    }
+
+    // --- Bulk Batch Processing ---
+    async function launchBulkBatch() {
+      const size = Number(document.getElementById('bulkSize').value);
+      const tenantId = 'tenant-acme';
+      
+      const documents = [];
+      for (let i = 1; i <= size; i++) {
+        documents.push({
+          documentType: i % 2 === 0 ? 'purchase_order' : 'invoice',
+          documentId: `DOC-BATCH-${100 + i}`,
+          tenantId: tenantId,
+          data: {
+            [i % 2 === 0 ? 'poNumber' : 'invoiceNumber']: `DOC-BATCH-${100 + i}`,
+            [i % 2 === 0 ? 'poDate' : 'invoiceDate']: '2026-10-16',
+            supplier: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
+            customer: { name: `Client #${i}`, addressLine1: 'Street 5', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
+            buyer: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
+            vendor: { name: `Vendor #${i}`, addressLine1: 'Street 5', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
+            shippingAddress: { name: 'Warehouse', addressLine1: 'Zone 2', city: 'Pune', state: 'Maharashtra', pincode: '411001' },
+            billingAddress: { name: 'Acme Technologies', addressLine1: 'Road 1', city: 'Mumbai', state: 'Maharashtra', pincode: '400001' },
+            items: [{ description: `Batch Item Product #${i}`, quantity: i, unit: 'PCS', unitPrice: 200, taxableAmount: i * 200, totalAmount: i * 236 }],
+            subtotal: i * 200,
+            totalTax: i * 36,
+            totalIgst: i * 36,
+            grandTotal: i * 236
+          }
+        });
+      }
+
+      document.getElementById('bulkProgressSection').style.display = 'block';
+      document.getElementById('sseLog').innerText = 'Submitting batch of ' + size + ' documents to /api/v1/documents/bulk...\\n';
+
+      try {
+        const res = await fetch('/api/v1/documents/bulk', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'x-api-key': API_KEY,
+            'x-tenant-id': tenantId
+          },
+          body: JSON.stringify({ tenantId, documents })
+        });
+
+        const bulkJob = await res.json();
+        currentBulkJobId = bulkJob.bulkJobId;
+        document.getElementById('bulkJobIdDisplay').innerText = 'Job ID: ' + currentBulkJobId;
+
+        startSseMonitoring(currentBulkJobId, tenantId);
+      } catch (err) {
+        alert('Failed to submit bulk batch: ' + err.message);
+      }
+    }
+
+    function startSseMonitoring(bulkJobId, tenantId) {
+      if (sseSource) sseSource.close();
+      const sseLog = document.getElementById('sseLog');
+      sseLog.innerText += `Connecting SSE live stream: /api/v1/bulk/${bulkJobId}/events\\n`;
+
+      sseSource = new EventSource(`/api/v1/bulk/${bulkJobId}/events?apiKey=${API_KEY}&tenantId=${tenantId}`);
+
+      sseSource.addEventListener('snapshot', (e) => {
+        const data = JSON.parse(e.data);
+        sseLog.innerText += `[SNAPSHOT] Status: ${data.status} | Total: ${data.totalDocuments}\\n`;
+        updateBulkUi(data);
+      });
+
+      sseSource.addEventListener('progress', (e) => {
+        const data = JSON.parse(e.data);
+        sseLog.innerText += `[PROGRESS] ${data.completedDocuments}/${data.totalDocuments} completed (${data.percentageComplete}%)\\n`;
+        updateBulkUi(data);
+      });
+
+      sseSource.addEventListener('done', (e) => {
+        const data = JSON.parse(e.data);
+        sseLog.innerText += `[DONE] Batch reached final state: ${data.status.toUpperCase()}!\\n`;
+        sseSource.close();
+
+        // Reveal ZIP download & manifest buttons
+        const zipBtn = document.getElementById('btnBulkDownloadZip');
+        zipBtn.href = `/api/v1/bulk/${bulkJobId}/download?apiKey=${API_KEY}&tenantId=${tenantId}`;
+        zipBtn.style.display = 'inline-flex';
+
+        const manifestBtn = document.getElementById('btnBulkManifest');
+        manifestBtn.style.display = 'inline-flex';
+      });
+
+      sseSource.onerror = () => {
+        sseLog.innerText += `[SSE connection closed]\\n`;
+      };
+    }
+
+    function updateBulkUi(data) {
+      document.getElementById('bulkPercentText').innerText = data.percentageComplete + '%';
+      document.getElementById('bulkProgressBar').style.width = data.percentageComplete + '%';
+      document.getElementById('bulkTotal').innerText = data.totalDocuments;
+      document.getElementById('bulkCompleted').innerText = data.completedDocuments;
+      document.getElementById('bulkPending').innerText = data.queuedDocuments + data.processingDocuments;
+      document.getElementById('bulkFailed').innerText = data.failedDocuments;
+    }
+
+    async function viewBulkManifest() {
+      if (!currentBulkJobId) return;
+      const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/manifest?apiKey=${API_KEY}&tenantId=tenant-acme`);
+      const manifest = await res.json();
+      alert('Manifest Details:\\n\\n' + JSON.stringify(manifest, null, 2));
+    }
+
+    // --- Tamper Evidence Verifier ---
+    async function executeIntegrityVerification() {
+      const docId = document.getElementById('verifyDocId').value;
+      const tenantId = document.getElementById('verifyTenantId').value;
+      
+      try {
+        const res = await fetch(`/api/v1/documents/${docId}/verify?apiKey=${API_KEY}&tenantId=${tenantId}`);
+        const data = await res.json();
+        
+        document.getElementById('verifyResultCard').style.display = 'block';
+        const box = document.getElementById('verifyStatusBox');
+        
+        if (data.isValid) {
+          box.style.background = '#dcfce7';
+          box.style.color = '#166534';
+          box.innerHTML = `✅ <strong>AUTHENTIC & UNTAMPERED:</strong> PDF bytes in storage match recorded SHA-256 hash!<br><code style="font-size:11px;">${data.computedHash}</code>`;
+        } else {
+          box.style.background = '#fee2e2';
+          box.style.color = '#991b1b';
+          box.innerHTML = `⚠️ <strong>TAMPER DETECTED:</strong> Physical PDF bytes have been modified after generation!`;
+        }
+
+        // Render audit table
+        const tbody = document.getElementById('auditBody');
+        tbody.innerHTML = '';
+        (data.auditLogs || []).forEach(log => {
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td>${new Date(log.createdAt).toLocaleString()}</td>
+            <td><span class="badge badge-info">${log.action.toUpperCase()}</span></td>
+            <td>${log.performedBy}</td>
+            <td><code style="font-size:10px;">${log.sha256Checksum}</code></td>
+          `;
+          tbody.appendChild(tr);
+        });
+
+      } catch (err) {
+        alert('Verification Failed: ' + err.message);
+      }
+    }
+
+    function verifyCurrentDoc() {
+      switchTab('audit');
+      document.getElementById('verifyDocId').value = document.getElementById('docId').value;
+      document.getElementById('verifyTenantId').value = document.getElementById('tenantId').value;
+      executeIntegrityVerification();
+    }
+
+    // --- Health & Observability ---
+    async function checkHealth() {
+      try {
+        const res = await fetch('/health');
+        const data = await res.json();
+        document.getElementById('statusText').innerText = `Healthy (${data.uptime.toFixed(0)}s)`;
+        document.getElementById('serviceStatus').style.background = '#10b981';
+      } catch {
+        document.getElementById('statusText').innerText = 'Offline';
+        document.getElementById('serviceStatus').style.background = '#ef4444';
+      }
+    }
+
+    async function fetchMetrics() {
+      try {
+        const res = await fetch('/metrics');
+        const m = await res.json();
+        document.getElementById('metricUptime').innerText = m.uptimeSeconds + 's';
+        document.getElementById('metricRequests').innerText = m.requests.total;
+        document.getElementById('metricLatency').innerText = m.requests.avgLatencyMs + 'ms';
+        document.getElementById('metricMemory').innerText = m.memory.rssMb + ' MB';
+        document.getElementById('rawMetricsJson').innerText = JSON.stringify(m, null, 2);
+      } catch (err) {
+        document.getElementById('rawMetricsJson').innerText = 'Metrics unavailable';
+      }
+    }
+
+    // Initial boot
+    renderItems();
+    checkHealth();
+    setInterval(checkHealth, 10000);
+  </script>
+</body>
+</html>
