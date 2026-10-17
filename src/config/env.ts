@@ -6,7 +6,7 @@ dotenv.config();
 export const INSECURE_DEFAULT_API_KEY = 'erp-service-secret-key-change-in-production';
 export const INSECURE_DEFAULT_JWT_SECRET = 'transzact-super-secure-jwt-secret-key-change-in-production-2026';
 
-const envSchema = z.object({
+export const envSchema = z.object({
   PORT: z.coerce.number().default(4000),
   HOST: z.string().default('0.0.0.0'),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
@@ -70,28 +70,54 @@ const envSchema = z.object({
     .default('false'),
 }).superRefine((data, ctx) => {
   if (data.NODE_ENV === 'production') {
-    if (!data.JWT_SECRET || data.JWT_SECRET === INSECURE_DEFAULT_JWT_SECRET) {
+    // 1. JWT_SECRET validation in production
+    if (!data.JWT_SECRET) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['JWT_SECRET'],
-        message:
-          'CRITICAL SECURITY VIOLATION: In production (NODE_ENV=production), JWT_SECRET must be explicitly set to a private secret and cannot use the default placeholder from GitHub.',
+        message: 'Production startup refused: JWT_SECRET is missing. An explicit secret must be provided.',
+      });
+    } else if (data.JWT_SECRET === INSECURE_DEFAULT_JWT_SECRET) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message: 'Production startup refused: JWT_SECRET cannot equal the public default value.',
+      });
+    } else if (data.JWT_SECRET.length < 32) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['JWT_SECRET'],
+        message: `Production startup refused: JWT_SECRET must be at least 32 characters long (got ${data.JWT_SECRET.length}).`,
       });
     }
-    if (!data.API_KEY || data.API_KEY === INSECURE_DEFAULT_API_KEY) {
+
+    // 2. API_KEY validation in production
+    if (!data.API_KEY) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['API_KEY'],
-        message:
-          'CRITICAL SECURITY VIOLATION: In production (NODE_ENV=production), API_KEY must be explicitly set to a private secret and cannot use the default placeholder from GitHub.',
+        message: 'Production startup refused: API_KEY is missing. An explicit secret must be provided.',
+      });
+    } else if (data.API_KEY === INSECURE_DEFAULT_API_KEY) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['API_KEY'],
+        message: 'Production startup refused: API_KEY cannot equal the public default value.',
+      });
+    } else if (data.API_KEY.length < 32) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        path: ['API_KEY'],
+        message: `Production startup refused: API_KEY must be at least 32 characters long (got ${data.API_KEY.length}).`,
       });
     }
+
+    // 3. DEV_AUTH_BYPASS check in production
     if (data.DEV_AUTH_BYPASS) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         path: ['DEV_AUTH_BYPASS'],
-        message:
-          'CRITICAL SECURITY VIOLATION: DEV_AUTH_BYPASS cannot be enabled in production environments.',
+        message: 'Production startup refused: DEV_AUTH_BYPASS cannot be enabled in production environments.',
       });
     }
   }

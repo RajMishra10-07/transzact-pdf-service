@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import request from 'supertest';
 import { app } from '../../src/app.js';
-import { env } from '../../src/config/env.js';
+import { env, envSchema, INSECURE_DEFAULT_API_KEY, INSECURE_DEFAULT_JWT_SECRET } from '../../src/config/env.js';
 import {
   setForceInMemoryRepositories,
   getDocumentRepository,
@@ -229,5 +229,72 @@ describe('Security & Concurrency Defect Regression Tests', () => {
     expect(res.status).toBe(201);
     expect(res.body.user.role).toBe('viewer');
     expect(res.body.user.tenantId).toBe('default-tenant');
+  });
+
+  it('Defect 8: Production startup refuses if JWT_SECRET or API_KEY is missing, default, or under 32 chars', () => {
+    const baseProductionEnv = {
+      NODE_ENV: 'production' as const,
+      PORT: 4000,
+      HOST: '0.0.0.0',
+      DATABASE_URL: 'postgresql://postgres:postgres@localhost:5432/erp_pdf_service',
+      REDIS_URL: 'redis://localhost:6379',
+      STORAGE_BACKEND: 'local' as const,
+      JWT_SECRET: 'a-sufficiently-long-production-jwt-secret-min-32-chars',
+      API_KEY: 'a-sufficiently-long-production-api-key-min-32-chars',
+    };
+
+    // Valid production config should parse successfully
+    const validResult = envSchema.safeParse(baseProductionEnv);
+    expect(validResult.success).toBe(true);
+
+    // Missing JWT_SECRET
+    const missingJwt = envSchema.safeParse({ ...baseProductionEnv, JWT_SECRET: '' });
+    expect(missingJwt.success).toBe(false);
+    if (!missingJwt.success) {
+      expect(missingJwt.error.errors.some(e => e.message.includes('JWT_SECRET is missing'))).toBe(true);
+    }
+
+    // Default placeholder JWT_SECRET
+    const defaultJwt = envSchema.safeParse({ ...baseProductionEnv, JWT_SECRET: INSECURE_DEFAULT_JWT_SECRET });
+    expect(defaultJwt.success).toBe(false);
+    if (!defaultJwt.success) {
+      expect(defaultJwt.error.errors.some(e => e.message.includes('JWT_SECRET cannot equal the public default value'))).toBe(true);
+    }
+
+    // Short JWT_SECRET (< 32 chars)
+    const shortJwt = envSchema.safeParse({ ...baseProductionEnv, JWT_SECRET: 'too-short-jwt-secret' });
+    expect(shortJwt.success).toBe(false);
+    if (!shortJwt.success) {
+      expect(shortJwt.error.errors.some(e => e.message.includes('JWT_SECRET must be at least 32 characters'))).toBe(true);
+    }
+
+    // Missing API_KEY
+    const missingApiKey = envSchema.safeParse({ ...baseProductionEnv, API_KEY: '' });
+    expect(missingApiKey.success).toBe(false);
+    if (!missingApiKey.success) {
+      expect(missingApiKey.error.errors.some(e => e.message.includes('API_KEY is missing'))).toBe(true);
+    }
+
+    // Default placeholder API_KEY
+    const defaultApiKey = envSchema.safeParse({ ...baseProductionEnv, API_KEY: INSECURE_DEFAULT_API_KEY });
+    expect(defaultApiKey.success).toBe(false);
+    if (!defaultApiKey.success) {
+      expect(defaultApiKey.error.errors.some(e => e.message.includes('API_KEY cannot equal the public default value'))).toBe(true);
+    }
+
+    // Short API_KEY (< 32 chars)
+    const shortApiKey = envSchema.safeParse({ ...baseProductionEnv, API_KEY: 'too-short-api-key' });
+    expect(shortApiKey.success).toBe(false);
+    if (!shortApiKey.success) {
+      expect(shortApiKey.error.errors.some(e => e.message.includes('API_KEY must be at least 32 characters'))).toBe(true);
+    }
+
+    // Defaults ARE allowed in development
+    const devResult = envSchema.safeParse({
+      NODE_ENV: 'development' as const,
+      JWT_SECRET: INSECURE_DEFAULT_JWT_SECRET,
+      API_KEY: INSECURE_DEFAULT_API_KEY,
+    });
+    expect(devResult.success).toBe(true);
   });
 });
