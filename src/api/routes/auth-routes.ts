@@ -18,3 +18,4 @@ authRouter.get(
   requireRole('admin'),
   asyncHandler(AuthController.listUsers)
 );
+

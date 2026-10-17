@@ -20,3 +20,4 @@ export interface AuthUser {
   tenantId: string;
   name?: string;
 }
+

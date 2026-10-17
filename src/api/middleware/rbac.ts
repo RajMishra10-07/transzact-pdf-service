@@ -22,3 +22,4 @@ export function requireRole(...allowedRoles: UserRole[]) {
     );
   };
 }
+
