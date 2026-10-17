@@ -309,9 +309,198 @@
     }
     .stat-label { font-size: 12px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
     .stat-val { font-size: 24px; font-weight: 700; color: #0f172a; margin-top: 4px; }
+
+    /* Auth Modal & RBAC Styles */
+    .modal-backdrop {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(15, 23, 42, 0.65);
+      backdrop-filter: blur(4px);
+      z-index: 10000;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 16px;
+    }
+    .modal-card {
+      background: #ffffff;
+      border-radius: 12px;
+      box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08);
+      width: 100%;
+      max-width: 480px;
+      overflow: hidden;
+      border: 1px solid #cbd5e1;
+      animation: modalFadeIn 0.2s ease;
+    }
+    @keyframes modalFadeIn {
+      from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+      to { opacity: 1; transform: translateY(0) scale(1); }
+    }
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #f8fafc;
+      border-bottom: 1px solid var(--border);
+      padding: 0 16px;
+    }
+    .modal-tabs { display: flex; gap: 4px; }
+    .modal-tab {
+      padding: 14px 18px;
+      font-size: 13px;
+      font-weight: 700;
+      color: #64748b;
+      border: none;
+      background: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .modal-tab.active {
+      color: var(--primary);
+      border-bottom-color: var(--primary);
+      background: #ffffff;
+    }
+    .btn-close {
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #94a3b8;
+      cursor: pointer;
+      padding: 6px;
+      line-height: 1;
+      border-radius: 4px;
+    }
+    .btn-close:hover { color: #0f172a; background: #e2e8f0; }
+    .modal-body { padding: 20px; }
+    .btn-demo-pill {
+      background: #ffffff;
+      border: 1px solid #cbd5e1;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      color: #1e293b;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .btn-demo-pill:hover {
+      background: #eff6ff;
+      border-color: #3b82f6;
+      color: #1d4ed8;
+    }
+    .auth-alert {
+      padding: 10px 14px;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      margin-bottom: 14px;
+    }
+    .auth-alert.error { background: #fee2e2; color: #991b1b; border: 1px solid #fca5a5; }
+    .auth-alert.success { background: #dcfce7; color: #166534; border: 1px solid #86efac; }
+    .role-badge-admin { background: #fef3c7; color: #92400e; border: 1px solid #fde68a; }
+    .role-badge-operator { background: #e0f2fe; color: #075985; border: 1px solid #bae6fd; }
+    .role-badge-viewer { background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; }
+    .rbac-notice-banner {
+      background: #eff6ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      font-size: 13px;
+      color: #1e40af;
+    }
   </style>
 </head>
 <body>
+
+  <!-- Auth Modal Dialog (Login & Sign-Up) -->
+  <div id="authModal" class="modal-backdrop" style="display: none;" onclick="handleModalBackdropClick(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <div class="modal-tabs">
+          <button id="tabBtnLogin" class="modal-tab active" onclick="switchAuthTab('login')">Sign In</button>
+          <button id="tabBtnSignup" class="modal-tab" onclick="switchAuthTab('signup')">Create Account</button>
+        </div>
+        <button class="btn-close" onclick="closeAuthModal()" title="Close">✕</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error / Info Banner -->
+        <div id="authAlert" class="auth-alert" style="display: none;"></div>
+
+        <!-- TAB 1: LOGIN -->
+        <div id="authPaneLogin">
+          <!-- Quick Demo Account Switcher -->
+          <div style="margin-bottom: 16px; background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 8px; padding: 12px;">
+            <div style="font-size: 11px; font-weight: 700; color: #64748b; text-transform: uppercase; margin-bottom: 8px;">
+              ⚡ 1-Click Demo Accounts (Pre-seeded JWTs)
+            </div>
+            <div style="display: flex; gap: 8px; flex-wrap: wrap;">
+              <button class="btn-demo-pill" type="button" onclick="fillDemoCredentials('admin')">👑 Admin (Full Access)</button>
+              <button class="btn-demo-pill" type="button" onclick="fillDemoCredentials('operator')">⚡ Operator (Single & Bulk)</button>
+              <button class="btn-demo-pill" type="button" onclick="fillDemoCredentials('viewer')">👁️ Viewer (Read-only)</button>
+            </div>
+          </div>
+
+          <form id="loginForm" onsubmit="handleLoginSubmit(event)">
+            <div class="form-group" style="margin-bottom: 12px;">
+              <label>Email Address</label>
+              <input type="email" id="loginEmail" required placeholder="admin@transzact.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 18px;">
+              <label>Password</label>
+              <input type="password" id="loginPassword" required placeholder="••••••••">
+            </div>
+            <button type="submit" class="btn btn-primary" id="btnLoginSubmit" style="width: 100%;">
+              🔐 Sign In with JWT
+            </button>
+          </form>
+        </div>
+
+        <!-- TAB 2: SIGNUP -->
+        <div id="authPaneSignup" style="display: none;">
+          <form id="signupForm" onsubmit="handleSignupSubmit(event)">
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Full Name</label>
+              <input type="text" id="signupName" required placeholder="Jane Operator">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Email Address</label>
+              <input type="email" id="signupEmail" required placeholder="jane@company.com">
+            </div>
+            <div class="form-group" style="margin-bottom: 10px;">
+              <label>Password (min 6 characters)</label>
+              <input type="password" id="signupPassword" required minlength="6" placeholder="••••••••">
+            </div>
+            <div class="form-row" style="margin-bottom: 14px;">
+              <div class="form-group">
+                <label>Assigned Role (RBAC)</label>
+                <select id="signupRole">
+                  <option value="operator" selected>Operator (Single & Bulk)</option>
+                  <option value="admin">Admin (Full Control)</option>
+                  <option value="viewer">Viewer (Read-Only)</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Tenant ID</label>
+                <input type="text" id="signupTenantId" value="transzact-corp" placeholder="transzact-corp">
+              </div>
+            </div>
+            <button type="submit" class="btn btn-success" id="btnSignupSubmit" style="width: 100%;">
+              🚀 Create Account & Sign In
+            </button>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
 
   <!-- Top Header -->
   <header>
@@ -320,6 +509,10 @@
       <span>v1.0.0 Microservice</span>
     </div>
     <div class="header-status">
+      <!-- User Authentication & Role Pill -->
+      <div id="authHeaderBar" style="display: flex; align-items: center; gap: 8px;">
+        <!-- Dynamically rendered -->
+      </div>
       <div id="serviceStatus" class="status-pill">
         <span class="status-dot"></span> <span id="statusText">Checking...</span>
       </div>
@@ -343,6 +536,15 @@
         
         <!-- Left: Form Controls -->
         <div>
+          <!-- Viewer Role Warning Banner -->
+          <div id="rbacNoticeSingle" class="rbac-notice-banner" style="display: none;">
+            <span>👁️</span>
+            <div>
+              <strong>Read-Only Mode:</strong> Your account has the <strong>Viewer</strong> role. You can view live HTML previews and download existing documents, but generating new PDFs requires an <strong>Operator</strong> or <strong>Admin</strong> account.
+              <a href="javascript:void(0)" onclick="openAuthModal('login')" style="color: #2563eb; font-weight: 600; margin-left: 6px;">Switch Account</a>
+            </div>
+          </div>
+
           <div class="card">
             <div class="card-title">
               <span>Document Configuration</span>
@@ -521,6 +723,15 @@
           Submit multi-document workloads to background queues. Monitor live progress via Server-Sent Events (SSE) and download streaming ZIP archives with HTTP Range support.
         </p>
 
+        <!-- Viewer Role Warning Banner -->
+        <div id="rbacNoticeBulk" class="rbac-notice-banner" style="display: none;">
+          <span>👁️</span>
+          <div>
+            <strong>Read-Only Mode:</strong> Your account has the <strong>Viewer</strong> role. You can monitor batch queues and download completed archives, but triggering new bulk batches requires an <strong>Operator</strong> or <strong>Admin</strong> account.
+            <a href="javascript:void(0)" onclick="openAuthModal('login')" style="color: #2563eb; font-weight: 600; margin-left: 6px;">Switch Account</a>
+          </div>
+        </div>
+
         <!-- Bulk Batch Configuration (Up to 100 PDFs in One Request) -->
         <div style="background: var(--bg); padding: 18px; border-radius: var(--radius); border: 1px solid var(--border); margin-bottom: 20px;">
           <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 14px; flex-wrap: wrap; gap: 8px;">
@@ -685,7 +896,39 @@
 
       <div class="card">
         <div class="card-title">Live Operational Metrics JSON Snapshot</div>
-        <pre class="log-terminal" id="rawMetricsJson" style="height: 350px;">Fetching metrics...</pre>
+        <pre class="log-terminal" id="rawMetricsJson" style="height: 300px;">Fetching metrics...</pre>
+      </div>
+
+      <!-- User Directory & RBAC Management -->
+      <div class="card" id="cardUserDirectory">
+        <div class="card-title">
+          <span>👥 User Directory & Role-Based Access Control (RBAC)</span>
+          <div style="display: flex; gap: 8px;">
+            <button class="btn btn-primary btn-sm" onclick="openAuthModal('signup')">+ Register New User</button>
+            <button class="btn btn-secondary btn-sm" onclick="fetchUserDirectory()">🔄 Refresh Directory</button>
+          </div>
+        </div>
+        <p style="font-size: 13px; color: var(--text-muted); margin-bottom: 12px;">
+          Admins can audit users and their assigned permissions across tenants in real time.
+        </p>
+        <table class="items-table">
+          <thead>
+            <tr>
+              <th style="width: 25%;">Name</th>
+              <th style="width: 30%;">Email</th>
+              <th style="width: 15%;">Role</th>
+              <th style="width: 15%;">Tenant ID</th>
+              <th style="width: 15%;">Actions</th>
+            </tr>
+          </thead>
+          <tbody id="userDirectoryBody">
+            <tr>
+              <td colspan="5" style="text-align: center; color: var(--text-muted); padding: 16px;">
+                Loading registered users...
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -693,11 +936,341 @@
 
   <script>
     const API_KEY = 'erp-service-secret-key-change-in-production';
+    let currentAuthToken = localStorage.getItem('tranzact_jwt_token') || null;
+    let currentUser = null;
+    try {
+      const stored = localStorage.getItem('tranzact_jwt_user');
+      if (stored) currentUser = JSON.parse(stored);
+    } catch {}
+
     let currentBulkJobId = null;
     let sseSource = null;
     let currentPreviewMode = 'html';
     let currentPreviewHtml = '';
     let currentPdfUrl = '';
+
+    // --- Authentication & RBAC Helper Functions ---
+    function getAuthToken() {
+      return currentAuthToken || localStorage.getItem('tranzact_jwt_token') || null;
+    }
+
+    function getAuthHeaders(extraHeaders = {}) {
+      const headers = { ...extraHeaders };
+      const token = getAuthToken();
+      if (token) {
+        headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        headers['x-api-key'] = API_KEY;
+      }
+      const tenant = (currentUser && currentUser.tenantId) || document.getElementById('tenantId')?.value || 'transzact-corp';
+      headers['x-tenant-id'] = tenant;
+      return headers;
+    }
+
+    function getAuthQueryParam() {
+      const token = getAuthToken();
+      return token ? `token=${encodeURIComponent(token)}` : `apiKey=${encodeURIComponent(API_KEY)}`;
+    }
+
+    // --- Auth Modal Dialog Controls ---
+    function openAuthModal(defaultTab = 'login') {
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'flex';
+      hideAuthAlert();
+      switchAuthTab(defaultTab);
+    }
+
+    function closeAuthModal() {
+      const modal = document.getElementById('authModal');
+      if (modal) modal.style.display = 'none';
+      hideAuthAlert();
+    }
+
+    function handleModalBackdropClick(e) {
+      if (e.target && e.target.id === 'authModal') {
+        closeAuthModal();
+      }
+    }
+
+    function switchAuthTab(tab) {
+      const tabLogin = document.getElementById('tabBtnLogin');
+      const tabSignup = document.getElementById('tabBtnSignup');
+      const paneLogin = document.getElementById('authPaneLogin');
+      const paneSignup = document.getElementById('authPaneSignup');
+
+      if (tab === 'login') {
+        if (tabLogin) tabLogin.classList.add('active');
+        if (tabSignup) tabSignup.classList.remove('active');
+        if (paneLogin) paneLogin.style.display = 'block';
+        if (paneSignup) paneSignup.style.display = 'none';
+      } else {
+        if (tabSignup) tabSignup.classList.add('active');
+        if (tabLogin) tabLogin.classList.remove('active');
+        if (paneSignup) paneSignup.style.display = 'block';
+        if (paneLogin) paneLogin.style.display = 'none';
+      }
+      hideAuthAlert();
+    }
+
+    function showAuthAlert(msg, isSuccess = false) {
+      const el = document.getElementById('authAlert');
+      if (el) {
+        el.innerText = msg;
+        el.className = 'auth-alert ' + (isSuccess ? 'success' : 'error');
+        el.style.display = 'block';
+      }
+    }
+
+    function hideAuthAlert() {
+      const el = document.getElementById('authAlert');
+      if (el) el.style.display = 'none';
+    }
+
+    function fillDemoCredentials(role) {
+      const emailInput = document.getElementById('loginEmail');
+      const passInput = document.getElementById('loginPassword');
+      if (role === 'admin') {
+        emailInput.value = 'admin@transzact.com';
+      } else if (role === 'operator') {
+        emailInput.value = 'operator@transzact.com';
+      } else if (role === 'viewer') {
+        emailInput.value = 'viewer@transzact.com';
+      }
+      passInput.value = 'password123';
+      showAuthAlert(`Pre-filled ${role.toUpperCase()} credentials. Click "Sign In with JWT" to authenticate.`, true);
+    }
+
+    async function handleLoginSubmit(e) {
+      e.preventDefault();
+      const email = document.getElementById('loginEmail').value.trim();
+      const password = document.getElementById('loginPassword').value;
+      const btn = document.getElementById('btnLoginSubmit');
+      btn.disabled = true;
+      btn.innerText = '⏳ Authenticating...';
+
+      try {
+        const res = await fetch('/api/v1/auth/login', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ email, password })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Login failed');
+
+        currentAuthToken = data.token;
+        currentUser = data.user;
+        localStorage.setItem('tranzact_jwt_token', data.token);
+        localStorage.setItem('tranzact_jwt_user', JSON.stringify(data.user));
+
+        renderAuthHeader();
+        updateRbacUi();
+        closeAuthModal();
+
+        // Refresh metrics and directory if on observability tab
+        if (document.getElementById('tab-metrics')?.classList.contains('active')) {
+          fetchMetrics();
+          fetchUserDirectory();
+        }
+      } catch (err) {
+        showAuthAlert(err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🔐 Sign In with JWT';
+      }
+    }
+
+    async function handleSignupSubmit(e) {
+      e.preventDefault();
+      const name = document.getElementById('signupName').value.trim();
+      const email = document.getElementById('signupEmail').value.trim();
+      const password = document.getElementById('signupPassword').value;
+      const role = document.getElementById('signupRole').value;
+      const tenantId = document.getElementById('signupTenantId').value.trim() || 'transzact-corp';
+      const btn = document.getElementById('btnSignupSubmit');
+      btn.disabled = true;
+      btn.innerText = '⏳ Creating account...';
+
+      try {
+        const res = await fetch('/api/v1/auth/signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, email, password, role, tenantId })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error?.message || 'Registration failed');
+
+        currentAuthToken = data.token;
+        currentUser = data.user;
+        localStorage.setItem('tranzact_jwt_token', data.token);
+        localStorage.setItem('tranzact_jwt_user', JSON.stringify(data.user));
+
+        renderAuthHeader();
+        updateRbacUi();
+        closeAuthModal();
+
+        alert(`✅ Account created successfully! Logged in as [${data.user.role.toUpperCase()}].`);
+      } catch (err) {
+        showAuthAlert(err.message, false);
+      } finally {
+        btn.disabled = false;
+        btn.innerText = '🚀 Create Account & Sign In';
+      }
+    }
+
+    function logoutUser() {
+      currentAuthToken = null;
+      currentUser = null;
+      localStorage.removeItem('tranzact_jwt_token');
+      localStorage.removeItem('tranzact_jwt_user');
+      renderAuthHeader();
+      updateRbacUi();
+    }
+
+    function renderAuthHeader() {
+      const container = document.getElementById('authHeaderBar');
+      if (!container) return;
+
+      if (!currentUser || !currentAuthToken) {
+        container.innerHTML = `
+          <button class="btn btn-primary btn-sm" onclick="openAuthModal('login')">🔐 Sign In / Register</button>
+        `;
+        return;
+      }
+
+      const roleClass = currentUser.role === 'admin' ? 'role-badge-admin' : (currentUser.role === 'operator' ? 'role-badge-operator' : 'role-badge-viewer');
+      container.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <span class="badge ${roleClass}" style="text-transform: uppercase; font-size: 10px; padding: 2px 8px; font-weight: 700;">
+            ${escapeHtml(currentUser.role)}
+          </span>
+          <span style="font-size: 12px; color: #cbd5e1; font-weight: 500;" title="${escapeHtml(currentUser.email)} (${escapeHtml(currentUser.tenantId)})">
+            ${escapeHtml(currentUser.email)}
+          </span>
+          <button class="btn btn-secondary btn-sm" onclick="openAuthModal('login')" style="padding: 2px 6px; font-size: 11px;" title="Switch user account">Switch</button>
+          <button class="btn btn-danger btn-sm" onclick="logoutUser()" style="padding: 2px 6px; font-size: 11px;" title="Sign out of session">Logout</button>
+        </div>
+      `;
+    }
+
+    function updateRbacUi() {
+      const isViewer = currentUser && currentUser.role === 'viewer';
+      const singleNotice = document.getElementById('rbacNoticeSingle');
+      const bulkNotice = document.getElementById('rbacNoticeBulk');
+      if (singleNotice) singleNotice.style.display = isViewer ? 'flex' : 'none';
+      if (bulkNotice) bulkNotice.style.display = isViewer ? 'flex' : 'none';
+
+      // Update tenant input if user has tenantId
+      if (currentUser && currentUser.tenantId) {
+        const tenantInput = document.getElementById('tenantId');
+        if (tenantInput && (!tenantInput.value || tenantInput.value === 'tenant-acme')) {
+          tenantInput.value = currentUser.tenantId;
+        }
+      }
+    }
+
+    async function autoInitAuth() {
+      if (currentAuthToken && currentUser) {
+        try {
+          const res = await fetch('/api/v1/auth/me', {
+            headers: { 'Authorization': `Bearer ${currentAuthToken}` }
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentUser = data.user;
+            localStorage.setItem('tranzact_jwt_user', JSON.stringify(data.user));
+          } else {
+            currentAuthToken = null;
+            currentUser = null;
+            localStorage.removeItem('tranzact_jwt_token');
+            localStorage.removeItem('tranzact_jwt_user');
+          }
+        } catch {
+          // Keep offline state
+        }
+      }
+
+      // If still not logged in, auto-login with pre-seeded demo Admin for friction-free access
+      if (!currentAuthToken || !currentUser) {
+        try {
+          const res = await fetch('/api/v1/auth/login', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: 'admin@transzact.com', password: 'password123' })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            currentAuthToken = data.token;
+            currentUser = data.user;
+            localStorage.setItem('tranzact_jwt_token', data.token);
+            localStorage.setItem('tranzact_jwt_user', JSON.stringify(data.user));
+          }
+        } catch (e) {
+          console.warn('Auto demo login', e);
+        }
+      }
+
+      renderAuthHeader();
+      updateRbacUi();
+    }
+
+    async function fetchUserDirectory() {
+      const tbody = document.getElementById('userDirectoryBody');
+      if (!tbody) return;
+
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 12px;">Fetching registered users...</td></tr>`;
+
+      try {
+        const res = await fetch('/api/v1/auth/users', {
+          headers: getAuthHeaders()
+        });
+
+        if (res.status === 403) {
+          tbody.innerHTML = `
+            <tr>
+              <td colspan="5" style="text-align: center; color: #b91c1c; padding: 16px; background: #fee2e2;">
+                ⚠️ <strong>Access Denied (RBAC):</strong> Listing user accounts is restricted to users with the <strong>Admin</strong> role. Your current role is <strong>${escapeHtml(currentUser?.role || 'Guest')}</strong>.
+              </td>
+            </tr>
+          `;
+          return;
+        }
+
+        if (!res.ok) throw new Error('Failed to fetch user directory');
+
+        const data = await res.json();
+        const users = data.users || [];
+        if (users.length === 0) {
+          tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--text-muted); padding: 12px;">No registered users found.</td></tr>`;
+          return;
+        }
+
+        tbody.innerHTML = '';
+        users.forEach(u => {
+          const roleClass = u.role === 'admin' ? 'role-badge-admin' : (u.role === 'operator' ? 'role-badge-operator' : 'role-badge-viewer');
+          const isCurrent = currentUser && currentUser.email === u.email;
+          const tr = document.createElement('tr');
+          tr.innerHTML = `
+            <td><strong>${escapeHtml(u.name || 'User')}</strong> ${isCurrent ? '<span class="badge badge-info" style="font-size:9px;">YOU</span>' : ''}</td>
+            <td><code>${escapeHtml(u.email)}</code></td>
+            <td><span class="badge ${roleClass}" style="text-transform: uppercase;">${escapeHtml(u.role)}</span></td>
+            <td><span style="font-size: 12px; color: var(--text-muted);">${escapeHtml(u.tenantId)}</span></td>
+            <td>
+              <button class="btn btn-secondary btn-sm" onclick="switchLoginAsUser('${escapeHtml(u.email)}')">Login As</button>
+            </td>
+          `;
+          tbody.appendChild(tr);
+        });
+      } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" style="text-align: center; color: var(--danger); padding: 12px;">Error: ${escapeHtml(err.message)}</td></tr>`;
+      }
+    }
+
+    function switchLoginAsUser(email) {
+      openAuthModal('login');
+      document.getElementById('loginEmail').value = email;
+      document.getElementById('loginPassword').value = 'password123';
+      showAuthAlert(`Enter password for ${email} (Demo accounts: password123)`, true);
+    }
 
     // --- Tab Switching ---
     function switchTab(tabKey) {
@@ -710,7 +1283,10 @@
       const pane = document.getElementById('tab-' + tabKey);
       if (pane) pane.classList.add('active');
 
-      if (tabKey === 'metrics') fetchMetrics();
+      if (tabKey === 'metrics') {
+        fetchMetrics();
+        fetchUserDirectory();
+      }
     }
 
     // --- Line Items Editor ---
@@ -1009,6 +1585,12 @@
 
     // --- PDF Generation API ---
     async function generatePdf() {
+      if (currentUser && currentUser.role === 'viewer') {
+        alert('⚠️ RBAC Permission Denied: Your account has the Viewer role. Only Operators and Admins can trigger PDF generation. Please switch or login as an Operator or Admin.');
+        openAuthModal('login');
+        return;
+      }
+
       const btn = document.getElementById('btnGenerate');
       btn.disabled = true;
       btn.innerText = '⏳ Rendering PDF...';
@@ -1018,11 +1600,7 @@
       try {
         const res = await fetch('/api/v1/documents/generate', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-            'x-tenant-id': payload.tenantId
-          },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify(payload)
         });
 
@@ -1040,7 +1618,7 @@
           document.getElementById('metaHash').innerText = data.sha256Checksum ? data.sha256Checksum.substring(0, 16) + '...' : 'N/A';
         }
 
-        const downloadPath = `/api/v1/documents/${payload.documentId}/download?documentType=${payload.documentType}&tenantId=${payload.tenantId}&apiKey=${API_KEY}&_t=${Date.now()}`;
+        const downloadPath = `/api/v1/documents/${payload.documentId}/download?documentType=${payload.documentType}&tenantId=${payload.tenantId}&${getAuthQueryParam()}&_t=${Date.now()}`;
         const frame = document.getElementById('docPreviewFrame');
         frame.removeAttribute('srcdoc');
         frame.src = downloadPath;
@@ -1091,6 +1669,12 @@
     }
 
     async function launchBulkBatch(customCount) {
+      if (currentUser && currentUser.role === 'viewer') {
+        alert('⚠️ RBAC Permission Denied: Your account has the Viewer role. Only Operators and Admins can start bulk batch processing. Please switch or login as an Operator or Admin.');
+        openAuthModal('login');
+        return;
+      }
+
       const inputEl = document.getElementById('bulkDocCount');
       const selectEl = document.getElementById('bulkSize');
       const mixEl = document.getElementById('bulkDocMix');
@@ -1098,7 +1682,7 @@
       const rawCount = customCount || (inputEl ? Number(inputEl.value) : (selectEl ? Number(selectEl.value) : 100));
       const size = Math.max(1, Math.min(100, isNaN(rawCount) ? 100 : rawCount));
       const docMix = mixEl ? mixEl.value : 'mixed';
-      const tenantId = 'tenant-acme';
+      const tenantId = (currentUser && currentUser.tenantId) || 'transzact-corp';
 
       const btn = document.getElementById('btnLaunchBulk');
       if (btn) {
@@ -1170,11 +1754,7 @@
       try {
         const res = await fetch('/api/v1/documents/bulk', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'x-api-key': API_KEY,
-            'x-tenant-id': tenantId
-          },
+          headers: getAuthHeaders({ 'Content-Type': 'application/json' }),
           body: JSON.stringify({ tenantId, documents })
         });
 
@@ -1202,7 +1782,7 @@
       const sseLog = document.getElementById('sseLog');
       sseLog.innerText += `Connecting SSE live stream: /api/v1/bulk/${bulkJobId}/events\\n`;
 
-      sseSource = new EventSource(`/api/v1/bulk/${bulkJobId}/events?apiKey=${API_KEY}&tenantId=${tenantId}`);
+      sseSource = new EventSource(`/api/v1/bulk/${bulkJobId}/events?${getAuthQueryParam()}&tenantId=${tenantId}`);
 
       sseSource.addEventListener('snapshot', (e) => {
         const data = JSON.parse(e.data);
@@ -1223,7 +1803,7 @@
 
         // Reveal ZIP download & manifest buttons
         const zipBtn = document.getElementById('btnBulkDownloadZip');
-        zipBtn.href = `/api/v1/bulk/${bulkJobId}/download?apiKey=${API_KEY}&tenantId=${tenantId}`;
+        zipBtn.href = `/api/v1/bulk/${bulkJobId}/download?${getAuthQueryParam()}&tenantId=${tenantId}`;
         zipBtn.style.display = 'inline-flex';
 
         const manifestBtn = document.getElementById('btnBulkManifest');
@@ -1246,7 +1826,9 @@
 
     async function viewBulkManifest() {
       if (!currentBulkJobId) return;
-      const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/manifest?apiKey=${API_KEY}&tenantId=tenant-acme`);
+      const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/manifest?${getAuthQueryParam()}&tenantId=transzact-corp`, {
+        headers: getAuthHeaders()
+      });
       const manifest = await res.json();
       alert('Manifest Details:\\n\\n' + JSON.stringify(manifest, null, 2));
     }
@@ -1254,10 +1836,12 @@
     // --- Tamper Evidence Verifier ---
     async function executeIntegrityVerification() {
       const docId = document.getElementById('verifyDocId').value;
-      const tenantId = document.getElementById('verifyTenantId').value;
+      const tenantId = document.getElementById('verifyTenantId').value || 'transzact-corp';
       
       try {
-        const res = await fetch(`/api/v1/documents/${docId}/verify?apiKey=${API_KEY}&tenantId=${tenantId}`);
+        const res = await fetch(`/api/v1/documents/${docId}/verify?${getAuthQueryParam()}&tenantId=${tenantId}`, {
+          headers: getAuthHeaders()
+        });
         const data = await res.json();
         
         document.getElementById('verifyResultCard').style.display = 'block';
@@ -1349,7 +1933,7 @@
           } else if (activePane.id === 'tab-bulk' && currentBulkJobId) {
             try {
               const res = await fetch(`/api/v1/bulk/${currentBulkJobId}/status`, {
-                headers: { 'x-api-key': API_KEY, 'x-tenant-id': 'tenant-acme' }
+                headers: getAuthHeaders()
               });
               if (res.ok) {
                 const job = await res.json();
@@ -1387,6 +1971,7 @@
     renderItems();
     viewTemplateHtml();
     checkHealth();
+    autoInitAuth();
     setInterval(checkHealth, 10000);
   </script>
 </body>

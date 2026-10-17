@@ -15,6 +15,8 @@ const envSchema = z.object({
     .transform((val) => val === 'true')
     .default('false'),
   API_KEY: z.string().default('erp-service-secret-key-change-in-production'),
+  JWT_SECRET: z.string().default('transzact-super-secure-jwt-secret-key-change-in-production-2026'),
+  JWT_EXPIRES_IN_SECONDS: z.coerce.number().default(86400),
 
   // Rate Limiting
   RATE_LIMIT_WINDOW_MS: z.coerce.number().default(60000),

@@ -10,6 +10,7 @@ import { healthRouter } from './api/routes/health-routes.js';
 import { previewRouter } from './api/routes/preview-routes.js';
 import { documentRouter } from './api/routes/document-routes.js';
 import { bulkRouter } from './api/routes/bulk-routes.js';
+import { authRouter } from './api/routes/auth-routes.js';
 
 export function createApp(): Express {
   const app = express();
@@ -52,6 +53,7 @@ export function createApp(): Express {
   app.use('/', previewRouter);
 
   // Core API v1 Routes
+  app.use('/api/v1', authRouter);
   app.use('/api/v1', documentRouter);
   app.use('/api/v1', bulkRouter);
 
