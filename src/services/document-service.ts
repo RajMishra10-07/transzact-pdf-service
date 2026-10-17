@@ -67,7 +67,7 @@ export class DocumentService {
             req.documentId
           );
           if (doc) {
-            const downloadUrl = await storage.getSignedUrl(doc.storageKey);
+            const downloadUrl = `/api/v1/documents/${doc.documentId}/download?documentType=${doc.documentType}&tenantId=${doc.tenantId}`;
             return {
               isSync: true,
               jobId: existingJob.id,
@@ -152,7 +152,7 @@ export class DocumentService {
         await docRepo.updateGenerationJobStatus(job.id, 'completed');
         metricsService.recordRender(renderResult.renderDurationMs);
 
-        const downloadUrl = await storage.getSignedUrl(storageKey);
+        const downloadUrl = `/api/v1/documents/${req.documentId}/download?documentType=${req.documentType}&tenantId=${req.tenantId}`;
         return {
           isSync: true,
           jobId: job.id,

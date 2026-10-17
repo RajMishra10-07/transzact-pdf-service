@@ -152,4 +152,23 @@ describe('HTTP API Endpoints Integration Tests', () => {
     expect(res.body.status).toBe('queued');
     expect(res.body.documentId).toBe('INV-GAMMA-01');
   });
+
+  it('9. Should allow downloading stored files via /api/v1/storage/download', async () => {
+    const storage = new LocalStorageAdapter(testStorageDir);
+    setStorageService(storage);
+
+    const key = 'tenants/tenant_storage_test/invoice/INV-STORE-01.pdf';
+    await storage.save(key, Buffer.from('%PDF-1.4 Mock Stored PDF', 'utf8'), 'application/pdf');
+
+    const res = await request(app)
+      .get(`/api/v1/storage/download?key=${encodeURIComponent(key)}`)
+      .set('x-api-key', validApiKey)
+      .set('x-tenant-id', 'tenant_storage_test')
+      .buffer(true);
+
+    expect(res.status).toBe(200);
+    expect(res.header['content-type']).toBe('application/pdf');
+    const content = res.body instanceof Buffer ? res.body.toString('utf8') : res.text;
+    expect(content).toContain('%PDF-1.4 Mock Stored PDF');
+  });
 });

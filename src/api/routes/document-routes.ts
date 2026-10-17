@@ -12,4 +12,5 @@ documentRouter.use(tenantMiddleware);
 documentRouter.post('/documents/generate', asyncHandler(DocumentController.generate));
 documentRouter.get('/documents/:documentId/status', asyncHandler(DocumentController.getStatus));
 documentRouter.get('/documents/:documentId/download', asyncHandler(DocumentController.download));
+documentRouter.get('/storage/download', asyncHandler(DocumentController.storageDownload));
 documentRouter.get('/jobs/:jobId', asyncHandler(DocumentController.getJob));

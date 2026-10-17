@@ -11,19 +11,25 @@ logger.info('Starting PDF Generation & Archive Workers...');
 
 const activeWorkers: Worker[] = [];
 
-if (env.NORMAL_WORKER_CONCURRENCY > 0) {
-  logger.info({ concurrency: env.NORMAL_WORKER_CONCURRENCY }, 'Starting Normal Document Worker');
-  activeWorkers.push(startNormalDocumentWorker());
-}
+if (env.USE_IN_MEMORY_FALLBACK) {
+  logger.info(
+    'USE_IN_MEMORY_FALLBACK is enabled. Set USE_IN_MEMORY_FALLBACK=false in .env when Redis and PostgreSQL are running to launch BullMQ workers.'
+  );
+} else {
+  if (env.NORMAL_WORKER_CONCURRENCY > 0) {
+    logger.info({ concurrency: env.NORMAL_WORKER_CONCURRENCY }, 'Starting Normal Document Worker');
+    activeWorkers.push(startNormalDocumentWorker());
+  }
 
-if (env.LARGE_WORKER_CONCURRENCY > 0) {
-  logger.info({ concurrency: env.LARGE_WORKER_CONCURRENCY }, 'Starting Large Document Worker');
-  activeWorkers.push(startLargeDocumentWorker());
-}
+  if (env.LARGE_WORKER_CONCURRENCY > 0) {
+    logger.info({ concurrency: env.LARGE_WORKER_CONCURRENCY }, 'Starting Large Document Worker');
+    activeWorkers.push(startLargeDocumentWorker());
+  }
 
-if (env.ARCHIVE_WORKER_CONCURRENCY > 0) {
-  logger.info({ concurrency: env.ARCHIVE_WORKER_CONCURRENCY }, 'Starting Archive Worker');
-  activeWorkers.push(startArchiveWorker());
+  if (env.ARCHIVE_WORKER_CONCURRENCY > 0) {
+    logger.info({ concurrency: env.ARCHIVE_WORKER_CONCURRENCY }, 'Starting Archive Worker');
+    activeWorkers.push(startArchiveWorker());
+  }
 }
 
 metricsService.setActiveWorkers(activeWorkers.length);

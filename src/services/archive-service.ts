@@ -113,6 +113,16 @@ export class ArchiveService {
       hash.update(chunk);
     });
 
+    // Handle archiver errors to prevent unhandled exception process crash
+    archive.on('error', (err) => {
+      logger.error({ err, bulkJobId }, 'Archiver error during ZIP creation');
+      passthrough.destroy(err);
+    });
+
+    archive.on('warning', (err) => {
+      logger.warn({ err, bulkJobId }, 'Archiver warning during ZIP creation');
+    });
+
     archive.pipe(passthrough);
 
     // Pipe streaming passthrough directly to object storage

@@ -169,8 +169,7 @@ export class BulkService {
 
     let downloadUrl: string | null = null;
     if (bulkJob.archiveStorageKey) {
-      const storage = getStorageService();
-      downloadUrl = await storage.getSignedUrl(bulkJob.archiveStorageKey);
+      downloadUrl = `/api/v1/bulk/${bulkJob.id}/download`;
     }
 
     return {

@@ -4,6 +4,7 @@ import {
   GetObjectCommand,
   HeadObjectCommand,
   DeleteObjectCommand,
+  CreateBucketCommand,
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
@@ -65,7 +66,16 @@ export class S3StorageAdapter implements IStorageService {
       ContentType: contentType,
     });
 
-    await this.client.send(command);
+    try {
+      await this.client.send(command);
+    } catch (err: unknown) {
+      if ((err as { name?: string }).name === 'NoSuchBucket') {
+        await this.client.send(new CreateBucketCommand({ Bucket: this.bucket }));
+        await this.client.send(command);
+      } else {
+        throw err;
+      }
+    }
     return { key, sizeBytes };
   }
 

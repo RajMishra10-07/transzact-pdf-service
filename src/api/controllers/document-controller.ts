@@ -125,4 +125,46 @@ export class DocumentController {
     const stream = await storage.getStream(doc.storageKey);
     stream.pipe(res);
   }
+
+  public static async storageDownload(req: Request, res: Response): Promise<void> {
+    const key = req.query.key as string;
+    if (!key) {
+      res.status(400).json({ error: { code: 'BAD_REQUEST', message: 'Storage key query parameter is required' } });
+      return;
+    }
+
+    if (req.tenantId && !key.startsWith(`tenants/${req.tenantId}/`)) {
+      throw new ForbiddenError('Access to storage key belongs to a different tenant');
+    }
+
+    const storage = getStorageService();
+    const metadata = await storage.getMetadata(key);
+
+    const rangeHeader = req.headers.range;
+    if (rangeHeader) {
+      const parts = rangeHeader.replace(/bytes=/, '').split('-');
+      const start = parseInt(parts[0], 10);
+      const end = parts[1] ? parseInt(parts[1], 10) : metadata.sizeBytes - 1;
+
+      if (start >= metadata.sizeBytes || end >= metadata.sizeBytes) {
+        res.status(416).setHeader('Content-Range', `bytes */${metadata.sizeBytes}`).end();
+        return;
+      }
+
+      res.status(206);
+      res.setHeader('Content-Range', `bytes ${start}-${end}/${metadata.sizeBytes}`);
+      res.setHeader('Accept-Ranges', 'bytes');
+      res.setHeader('Content-Length', end - start + 1);
+      res.setHeader('Content-Type', metadata.contentType);
+      const stream = await storage.getStream(key, { start, end });
+      stream.pipe(res);
+      return;
+    }
+
+    res.setHeader('Content-Type', metadata.contentType);
+    res.setHeader('Content-Length', metadata.sizeBytes);
+    res.setHeader('Accept-Ranges', 'bytes');
+    const stream = await storage.getStream(key);
+    stream.pipe(res);
+  }
 }

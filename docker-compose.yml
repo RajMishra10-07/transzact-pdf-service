@@ -65,6 +65,19 @@ services:
         limits:
           memory: 512M
 
+  minio-create-bucket:
+    image: minio/mc:RELEASE.2024-01-16T16-06-34Z
+    container_name: transzact-minio-create-bucket
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      /bin/sh -c "
+      /usr/bin/mc alias set local http://minio:9000 minioadmin minioadminpassword;
+      /usr/bin/mc mb --ignore-existing local/transzact-pdf-documents;
+      exit 0;
+      "
+
   api:
     build:
       context: .
