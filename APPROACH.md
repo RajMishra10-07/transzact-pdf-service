@@ -262,8 +262,36 @@ On a 4 GB RAM instance (`t4g.medium`), the system operates with **1.55 GB (38.7%
 
 ---
 
-## 5. Critical AI Evaluation & Overridden Hallucinations
+## 5. Complete AI Interaction & Prompt History Log
 
+### 5.1 Full Chronological User Prompts (From Starting to Last)
+The following is the complete, unaltered audit log of prompts issued from the initial project inception through final delivery:
+
+| # | Timestamp (UTC) | User Prompt Content | Action / Phase |
+| :--- | :--- | :--- | :--- |
+| **1** | `2026-10-17 14:05:45` | `check this project it have any error` | Initial project audit, linting, and dependency sanity check. |
+| **2** | `2026-10-17 14:20:21` | `yes` | Confirmation to proceed with automated fixes and enhancements. |
+| **3** | `2026-10-17 14:26:09` | `i want to push it into github` | Initial Git repository setup and staging. |
+| **4** | `2026-10-17 14:29:00` | `https://github.com/RajMishra10-07` | Setting remote origin URL to candidate GitHub profile. |
+| **5** | `2026-10-17 14:31:41` | `continue` | Continuing multi-step GitHub push and verification. |
+| **6** | `2026-10-17 14:33:02` | `how can i run this on brower` | Inquiring about browser runtime, static HTML previews, and local server access. |
+| **7** | `2026-10-17 14:34:34` | `@[src/templates/invoice/invoice.html] it is not work make it work` | Template rendering debugging (fixing Handlebars variable interpolation and styling). |
+| **8** | `2026-10-17 14:38:37` | `Run the push command yourself` | Delegating automated Git commit and push execution. |
+| **9** | `2026-10-17 14:52:23` | `also create the front end with complete work mobel` | Designing and building the full interactive web studio (`public/index.html`). |
+| **10** | `2026-10-17 15:52:21` | `do i need to do any thing` | Verification of remaining steps, server status, and test suites. |
+| **11** | `2026-10-17 15:55:37` | `push code in github` | Synchronizing intermediate frontend and worker fixes to GitHub. |
+| **12** | `2026-10-17 15:57:28` | `Click "🚀 Generate PDF" to create and preview an invoice rendered with real Chromium. Click "+ Add Item" to edit products and watch totals recalculate automatically. Switch to the Bulk Batch Processing tab to test batch queue generation. Switch to the Tamper Verifier tab to verify SHA-256 cryptographic hashes. Switch to the System Observability tab to inspect live server metrics. any button are not working check them` | UI comprehensive button and workflow audit across all studio tabs. |
+| **13** | `2026-10-17 16:03:13` | `in this html preview is not working and refresh button is also not working` | Fixing Helmet v8 CSP `script-src-attr` restrictions, iframe `srcdoc`, and refresh handlers. |
+| **14** | `2026-10-17 16:48:16` | `Bulk generation: Multiple documents (up to 100 PDFs) in one request add this option` | Expanding bulk generator to support up to 100 PDFs per single request with SSE. |
+| **15** | `2026-10-17 17:50:24` | `the input field in line item is not working` | Decoupling `calculateTotals()` from `renderItems()` to retain input focus while typing. |
+| **16** | `2026-10-17 17:57:08` | `check all this required are complete or not: The service receives HTTP requests with JSON payloads containing data for purchase orders and invoices from the primary service. Two types of requests must be supported: Single document generation (One PDF at a time), Bulk generation (up to 100 PDFs in one request). Generate PDFs using Puppeteer based on HTML templates. Users should be able to download generated PDFs (single file or zip file for bulk). The service should handle concurrent requests efficiently. Expected load: ~1000 single requests/min during peak times, and 5–10 bulk requests/min.` | Comprehensive compliance cross-check against all original prompt specifications. |
+| **17** | `2026-10-17 17:58:55` | `the front do not cover whole pge` | Restyling the portal to 100% viewport width with a full-screen `⛶ Maximize` mode. |
+| **18** | `2026-10-17 18:15:14` | `We need to build a PDF generation microservice for an ERP application that handles both individual and bulk document generation. is that we build` | Architectural verification and confirmation of enterprise microservice readiness. |
+| **19** | `2026-10-17 18:19:33` | `i want to add role base authentication using JWT ,add login signup option` | Implementing full JWT auth, salted scrypt password hashing, RBAC (`admin`, `operator`, `viewer`), and login/signup UI. |
+| **20** | `2026-10-17 19:00:49` | `i want to create one approach.md file in which give deep and complete discription how i have create this project and what are step ,and are important which i can highllight in this project` | Generating comprehensive engineering defense, step-by-step history, and technical highlights in `APPROACH.md`. |
+| **21** | `2026-10-17 19:02:55` | `i which give prompt i have used from starting to last` | Extracting and documenting the entire prompt trail from first prompt to last. |
+
+### 5.2 Critical AI Evaluation & Overridden Suggestions
 In accordance with senior engineering evaluation standards, AI recommendations were scrutinized and overridden where flawed:
 
 1. **Hallucination of Puppeteer PDF Streaming**:
