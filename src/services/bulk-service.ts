@@ -1,5 +1,6 @@
 import { EventEmitter } from 'events';
 import { Response } from 'express';
+import { Redis } from 'ioredis';
 import { APP_CONSTANTS } from '../config/constants.js';
 import { env } from '../config/env.js';
 import { BulkRequest } from '../api/schemas/bulk-schemas.js';
@@ -13,13 +14,153 @@ import {
   getDocumentRepository,
 } from '../database/repositories/repository-factory.js';
 import { getQueueManager } from '../queue/queues.js';
+import { createRedisClient } from '../queue/connection.js';
 import { getStorageService } from '../storage/storage-factory.js';
 import { archiveService, BulkManifest } from './archive-service.js';
 
-class BulkProgressEmitter extends EventEmitter {}
+export class BulkProgressEmitter extends EventEmitter {
+  private instanceId: string = generateUuid();
+  private publisher: Redis | null = null;
+  private subscriber: Redis | null = null;
+  private isSubscribing: boolean = false;
+  private isSubscribed: boolean = false;
+  private forceInMemory: boolean = false;
+  private forceRedisForTest: boolean = false;
+
+  constructor() {
+    super();
+    this.setMaxListeners(1000);
+  }
+
+  public setForceInMemory(enable: boolean): void {
+    this.forceInMemory = enable;
+  }
+
+  public setMockClients(mockPub: any, mockSub: any): void {
+    this.publisher = mockPub;
+    this.subscriber = mockSub;
+    this.forceRedisForTest = true;
+  }
+
+  public getInstanceId(): string {
+    return this.instanceId;
+  }
+
+  public emitLocal(event: string | symbol, ...args: any[]): boolean {
+    return super.emit(event, ...args);
+  }
+
+  public async publishProgress(snapshot: BulkStatusResponse): Promise<void> {
+    this.emitLocal('progress', snapshot);
+    await this.publishToRedis(snapshot);
+  }
+
+  public override emit(event: string | symbol, ...args: any[]): boolean {
+    const result = super.emit(event, ...args);
+    if (event === 'progress' && args[0]) {
+      this.publishToRedis(args[0]).catch((err) => {
+        logger.warn({ err }, 'Failed to publish bulk progress to Redis Pub/Sub');
+      });
+    }
+    return result;
+  }
+
+  public override on(event: string | symbol, listener: (...args: any[]) => void): this {
+    super.on(event, listener);
+    if (event === 'progress') {
+      this.ensureSubscribed().catch(() => {});
+    }
+    return this;
+  }
+
+  public async ensureSubscribed(): Promise<void> {
+    if (this.isSubscribed || this.isSubscribing) {
+      return;
+    }
+    if ((this.forceInMemory || env.USE_IN_MEMORY_FALLBACK || env.NODE_ENV === 'test') && !this.forceRedisForTest) {
+      return;
+    }
+
+    this.isSubscribing = true;
+    try {
+      if (!this.subscriber) {
+        this.subscriber = createRedisClient();
+      }
+      if (this.subscriber.status !== 'ready' && this.subscriber.status !== 'connecting') {
+        await this.subscriber.connect().catch((err) => {
+          logger.warn({ err }, 'Redis subscriber connection failed; continuing with local events');
+        });
+      }
+      if (this.subscriber.status === 'ready') {
+        await this.subscriber.subscribe(APP_CONSTANTS.REDIS_CHANNELS.BULK_PROGRESS);
+        this.subscriber.on('message', (channel: string, message: string) => {
+          if (channel === APP_CONSTANTS.REDIS_CHANNELS.BULK_PROGRESS) {
+            try {
+              const parsed = JSON.parse(message) as { senderId: string; snapshot: BulkStatusResponse };
+              if (parsed && parsed.senderId !== this.instanceId && parsed.snapshot) {
+                this.emitLocal('progress', parsed.snapshot);
+              }
+            } catch (parseErr) {
+              logger.warn({ err: parseErr }, 'Failed to parse Redis bulk-progress message');
+            }
+          }
+        });
+        this.isSubscribed = true;
+        logger.info('BulkProgressEmitter successfully subscribed to Redis bulk-progress channel');
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Could not subscribe to Redis bulk-progress channel');
+    } finally {
+      this.isSubscribing = false;
+    }
+  }
+
+  public async publishToRedis(snapshot: BulkStatusResponse): Promise<void> {
+    if ((this.forceInMemory || env.USE_IN_MEMORY_FALLBACK || env.NODE_ENV === 'test') && !this.forceRedisForTest) {
+      return;
+    }
+
+    try {
+      if (!this.publisher) {
+        this.publisher = createRedisClient();
+      }
+      if (this.publisher.status !== 'ready' && this.publisher.status !== 'connecting') {
+        await this.publisher.connect().catch((err) => {
+          logger.warn({ err }, 'Redis publisher connection failed');
+        });
+      }
+      if (this.publisher.status === 'ready') {
+        const payload = JSON.stringify({
+          senderId: this.instanceId,
+          snapshot,
+        });
+        await this.publisher.publish(APP_CONSTANTS.REDIS_CHANNELS.BULK_PROGRESS, payload);
+      }
+    } catch (err) {
+      logger.warn({ err }, 'Failed to publish bulk progress to Redis Pub/Sub');
+    }
+  }
+
+  public async close(): Promise<void> {
+    if (this.subscriber) {
+      try {
+        await this.subscriber.unsubscribe(APP_CONSTANTS.REDIS_CHANNELS.BULK_PROGRESS);
+        await this.subscriber.quit();
+      } catch {}
+      this.subscriber = null;
+    }
+    if (this.publisher) {
+      try {
+        await this.publisher.quit();
+      } catch {}
+      this.publisher = null;
+    }
+    this.isSubscribed = false;
+    this.isSubscribing = false;
+  }
+}
+
 export const bulkEmitter = new BulkProgressEmitter();
-// Increase listener limit for high concurrent SSE clients
-bulkEmitter.setMaxListeners(1000);
 
 export interface BulkCreationResult {
   bulkJobId: string;
@@ -195,6 +336,8 @@ export class BulkService {
    * Handles Server-Sent Events (SSE) connection for a bulk job.
    */
   public async handleSseConnection(bulkJobId: string, res: Response): Promise<void> {
+    await bulkEmitter.ensureSubscribed();
+
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
     res.setHeader('Connection', 'keep-alive');

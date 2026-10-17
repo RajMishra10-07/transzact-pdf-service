@@ -2,6 +2,7 @@ import { app } from './app.js';
 import { env } from './config/env.js';
 import { logger } from './utils/logger.js';
 import { pdfService } from './services/pdf-service.js';
+import { bulkEmitter } from './services/bulk-service.js';
 import { TemplateEngine } from './templates/engine.js';
 
 TemplateEngine.initialize();
@@ -18,6 +19,7 @@ async function gracefulShutdown(signal: string) {
   server.close(async () => {
     logger.info('HTTP server closed, cleaning up Chromium browser resources');
     await pdfService.closeBrowser();
+    await bulkEmitter.close();
     logger.info('Graceful shutdown completed');
     process.exit(0);
   });

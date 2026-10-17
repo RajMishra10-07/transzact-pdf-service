@@ -5,6 +5,7 @@ import { startArchiveWorker } from './archive-worker.js';
 import { logger } from '../utils/logger.js';
 import { metricsService } from '../services/metrics-service.js';
 import { pdfService } from '../services/pdf-service.js';
+import { bulkEmitter } from '../services/bulk-service.js';
 import { env } from '../config/env.js';
 
 logger.info('Starting PDF Generation & Archive Workers...');
@@ -39,6 +40,7 @@ async function shutdown() {
   metricsService.setActiveWorkers(0);
   await Promise.all(activeWorkers.map((worker) => worker.close()));
   await pdfService.closeBrowser();
+  await bulkEmitter.close();
   logger.info('All workers terminated');
   process.exit(0);
 }

@@ -14,6 +14,9 @@ export const APP_CONSTANTS = {
     LARGE: 'pdf-render-large',
     ARCHIVE: 'bulk-archive-creation',
   },
+  REDIS_CHANNELS: {
+    BULK_PROGRESS: 'transzact:bulk-progress',
+  },
   STORAGE_KEYS: {
     PDF: (tenantId: string, docType: string, docId: string, version = 1) =>
       `tenants/${tenantId}/documents/${docType}/${docId}-v${version}.pdf`,
