@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Purchase Order - PO-2026-550</title>
+  <style>
+    @page {
+  size: A4 portrait;
+  margin: 12mm 10mm 15mm 10mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1a202c;
+  background-color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.po-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.header-table {
+  width: 100%;
+  border-bottom: 2px solid #2f855a;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.buyer-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2f855a;
+  letter-spacing: -0.5px;
+}
+
+.doc-type-badge {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.meta-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.meta-table td {
+  padding: 2px 4px;
+}
+
+.parties-grid {
+  width: 100%;
+  margin-bottom: 16px;
+  border-collapse: collapse;
+}
+
+.party-box {
+  width: 50%;
+  vertical-align: top;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.party-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a5568;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.party-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: #1a202c;
+  margin-bottom: 2px;
+}
+
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 16px;
+  page-break-inside: auto;
+}
+
+.items-table thead {
+  display: table-header-group;
+}
+
+.items-table tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
+
+.items-table th {
+  background-color: #f0fff4;
+  color: #276749;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 6px 4px;
+  border-top: 1px solid #9ae6b4;
+  border-bottom: 2px solid #68d391;
+  border-right: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.items-table th:last-child {
+  border-right: none;
+}
+
+.items-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #edf2f7;
+  font-size: 10px;
+  word-wrap: break-word;
+}
+
+.items-table td:last-child {
+  border-right: none;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+.summary-container {
+  width: 100%;
+  page-break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+.summary-table {
+  width: 45%;
+  margin-left: auto;
+  border-collapse: collapse;
+}
+
+.summary-table td {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.summary-table .grand-total-row {
+  border-top: 2px solid #2f855a;
+  border-bottom: 2px solid #2f855a;
+  font-weight: 700;
+  font-size: 13px;
+  background-color: #f0fff4;
+  color: #276749;
+}
+
+.footer-section {
+  width: 100%;
+  page-break-inside: avoid;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+  font-size: 10px;
+  color: #4a5568;
+}
+
+.signature-box {
+  text-align: right;
+  margin-top: 24px;
+}
+
+.signature-line {
+  display: inline-block;
+  width: 180px;
+  border-top: 1px solid #4a5568;
+  margin-top: 35px;
+  text-align: center;
+  font-size: 10px;
+  color: #718096;
+}
+
+  </style>
+</head>
+<body>
+  <div class="po-container">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 60%; vertical-align: top;">
+          <div class="buyer-title">Acme Industrial Technologies Pvt Ltd</div>
+          <div style="margin-top: 4px;"><strong>GSTIN:</strong> 27AABCA1234F1Z6</div>
+          <div><strong>PAN:</strong> AABCA1234F</div>
+          <div style="color: #718096; margin-top: 2px;">Plot 102, Sector 8, MIDC, Navi Mumbai, Maharashtra - 400705</div>
+        </td>
+        <td style="width: 40%; vertical-align: top;">
+          <div class="doc-type-badge">PURCHASE ORDER</div>
+          <table class="meta-table">
+            <tr>
+              <td style="font-weight: 700; text-align: right;">PO Number:</td>
+              <td style="text-align: right;">PO-2026-550</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">PO Date:</td>
+              <td style="text-align: right;">16/10/2026</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Expected Delivery:</td>
+              <td style="text-align: right;">31/10/2026</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Parties Grid -->
+    <table class="parties-grid">
+      <tr>
+        <td class="party-box">
+          <div class="party-heading">Vendor / Supplier</div>
+          <div class="party-name">Tata Special Steel Alloys Ltd</div>
+          <div>Jamshedpur Works</div>
+          <div>Jamshedpur, Jharkhand - 831001</div>
+          <div style="margin-top: 4px;"><strong>GSTIN:</strong> 20CCCCA5678C1Z2</div>
+          
+        </td>
+        <td class="party-box">
+          <div class="party-heading">Shipping Address</div>
+          <div class="party-name">Acme Central Logistics Depot</div>
+          <div>Bhiwandi Warehousing Hub, Building 4</div>
+          <div>Bhiwandi, Maharashtra - 421302</div>
+          <div><strong>Email:</strong> logistics@acmeindustrial.in</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;" class="text-center">#</th>
+          <th style="width: 38%;">Item Description</th>
+          <th style="width: 12%;">HSN/SAC</th>
+          <th style="width: 10%;" class="text-right">Qty</th>
+          <th style="width: 15%;" class="text-right">Rate</th>
+          <th style="width: 20%;" class="text-right">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-center">1</td>
+          <td>Cold Rolled Steel Coil Grade 304 (2.5mm thickness)</td>
+          <td>7219</td>
+          <td class="text-right">1500 KGS</td>
+          <td class="text-right">₹ 185.00</td>
+          <td class="text-right" style="font-weight: 600;">₹ 327,450.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals Summary -->
+    <div class="summary-container">
+      <table class="summary-table">
+        <tr>
+          <td><strong>Subtotal:</strong></td>
+          <td class="text-right">₹ 277,500.00</td>
+        </tr>
+        <tr>
+          <td>Total Tax:</td>
+          <td class="text-right">₹ 49,950.00</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td>Grand Total:</td>
+          <td class="text-right">₹ 327,450.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin-bottom: 12px; font-size: 11px; background-color: #f0fff4; padding: 6px 8px; border-left: 3px solid #2f855a;">
+      <strong>Amount in Words:</strong> Three Lakh Twenty Seven Thousand Four Hundred Fifty Rupees Only
+    </div>
+
+    <!-- Footer / Terms -->
+    <div class="footer-section">
+      <table style="width: 100%;">
+        <tr>
+          <td style="width: 60%; vertical-align: top; padding-right: 15px;">
+            <div><strong>Payment Terms:</strong> 60 Days Net from date of Material Receipt &amp; Inspection</div>
+            <div style="margin-top: 4px;"><strong>Delivery Terms:</strong> Door Delivery Freight Paid by Supplier</div>
+          </td>
+          <td style="width: 40%; vertical-align: top; text-align: right;">
+            <div style="font-weight: 700; color: #2d3748;">Authorized Buyer Signatory</div>
+            <div class="signature-box">
+              <div class="signature-line">Acme Industrial Technologies Pvt Ltd</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 6px;">
+        Generated via TranZact PDF Microservice.
+      </div>
+    </div>
+  </div>
+</body>
+</html>

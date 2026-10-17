@@ -1,0 +1,373 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Tax Invoice - INV-2026-001</title>
+  <style>
+    @page {
+  size: A4 portrait;
+  margin: 12mm 10mm 15mm 10mm;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  color: #1a202c;
+  background-color: #ffffff;
+  font-size: 11px;
+  line-height: 1.4;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+}
+
+.invoice-container {
+  width: 100%;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+/* Header Section */
+.header-table {
+  width: 100%;
+  border-bottom: 2px solid #2b6cb0;
+  padding-bottom: 12px;
+  margin-bottom: 16px;
+}
+
+.company-title {
+  font-size: 20px;
+  font-weight: 700;
+  color: #2b6cb0;
+  letter-spacing: -0.5px;
+}
+
+.doc-type-badge {
+  font-size: 16px;
+  font-weight: 700;
+  color: #2d3748;
+  text-align: right;
+  text-transform: uppercase;
+}
+
+.meta-table {
+  width: 100%;
+  margin-top: 8px;
+  border-collapse: collapse;
+}
+
+.meta-table td {
+  padding: 2px 4px;
+}
+
+/* Parties Section */
+.parties-grid {
+  width: 100%;
+  margin-bottom: 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  border-collapse: collapse;
+}
+
+.party-box {
+  width: 50%;
+  vertical-align: top;
+  padding: 10px;
+  border: 1px solid #e2e8f0;
+}
+
+.party-heading {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: #4a5568;
+  border-bottom: 1px solid #edf2f7;
+  padding-bottom: 4px;
+  margin-bottom: 6px;
+}
+
+.party-name {
+  font-weight: 700;
+  font-size: 12px;
+  color: #1a202c;
+  margin-bottom: 2px;
+}
+
+/* Items Table */
+.items-table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+  margin-bottom: 16px;
+  page-break-inside: auto;
+}
+
+.items-table thead {
+  display: table-header-group;
+}
+
+.items-table tr {
+  page-break-inside: avoid;
+  page-break-after: auto;
+}
+
+.items-table th {
+  background-color: #f7fafc;
+  color: #2d3748;
+  font-weight: 700;
+  font-size: 10px;
+  text-transform: uppercase;
+  padding: 6px 4px;
+  border-top: 1px solid #cbd5e0;
+  border-bottom: 2px solid #cbd5e0;
+  border-right: 1px solid #e2e8f0;
+  text-align: left;
+}
+
+.items-table th:last-child {
+  border-right: none;
+}
+
+.items-table td {
+  padding: 5px 4px;
+  border-bottom: 1px solid #e2e8f0;
+  border-right: 1px solid #edf2f7;
+  font-size: 10px;
+  word-wrap: break-word;
+}
+
+.items-table td:last-child {
+  border-right: none;
+}
+
+.text-right {
+  text-align: right;
+}
+
+.text-center {
+  text-align: center;
+}
+
+/* Totals Summary */
+.summary-container {
+  width: 100%;
+  page-break-inside: avoid;
+  margin-bottom: 16px;
+}
+
+.summary-table {
+  width: 45%;
+  margin-left: auto;
+  border-collapse: collapse;
+}
+
+.summary-table td {
+  padding: 4px 6px;
+  font-size: 11px;
+}
+
+.summary-table .grand-total-row {
+  border-top: 2px solid #2b6cb0;
+  border-bottom: 2px solid #2b6cb0;
+  font-weight: 700;
+  font-size: 13px;
+  background-color: #ebf8ff;
+  color: #2b6cb0;
+}
+
+/* Footer / Bank Details */
+.footer-section {
+  width: 100%;
+  page-break-inside: avoid;
+  border-top: 1px solid #e2e8f0;
+  padding-top: 10px;
+  font-size: 10px;
+  color: #4a5568;
+}
+
+.bank-details {
+  border: 1px dashed #cbd5e0;
+  padding: 8px;
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.signature-box {
+  text-align: right;
+  margin-top: 24px;
+}
+
+.signature-line {
+  display: inline-block;
+  width: 180px;
+  border-top: 1px solid #4a5568;
+  margin-top: 35px;
+  text-align: center;
+  font-size: 10px;
+  color: #718096;
+}
+
+  </style>
+</head>
+<body>
+  <div class="invoice-container">
+    <!-- Header -->
+    <table class="header-table">
+      <tr>
+        <td style="width: 60%; vertical-align: top;">
+          <div class="company-title">Acme Industrial Technologies Pvt Ltd</div>
+          <div style="margin-top: 4px;"><strong>GSTIN:</strong> 27AABCA1234F1Z6</div>
+          <div><strong>PAN:</strong> AABCA1234F</div>
+          <div style="color: #718096; margin-top: 2px;">Plot 102, Sector 8, MIDC, Industrial Area, Navi Mumbai, Maharashtra - 400705</div>
+        </td>
+        <td style="width: 40%; vertical-align: top;">
+          <div class="doc-type-badge">TAX INVOICE</div>
+          <table class="meta-table">
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Invoice No:</td>
+              <td style="text-align: right;">INV-2026-001</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Invoice Date:</td>
+              <td style="text-align: right;">16/10/2026</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Due Date:</td>
+              <td style="text-align: right;">16/11/2026</td>
+            </tr>
+            <tr>
+              <td style="font-weight: 700; text-align: right;">Place of Supply:</td>
+              <td style="text-align: right;">Himachal Pradesh (02)</td>
+            </tr>
+          </table>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Parties Grid -->
+    <table class="parties-grid">
+      <tr>
+        <td class="party-box">
+          <div class="party-heading">Details of Receiver (Billed To)</div>
+          <div class="party-name">Bharat Heavy Manufacturing Ltd</div>
+          <div>Survey 45, Baddi Industrial Estate</div>
+          <div>Solan, Himachal Pradesh - 173205</div>
+          <div style="margin-top: 4px;"><strong>GSTIN:</strong> 02BBBBB1111B2Z4</div>
+          <div><strong>PAN:</strong> BBBBB1111B</div>
+          
+        </td>
+        <td class="party-box">
+          <div class="party-heading">Dispatch / Supplier Details</div>
+          <div class="party-name">Acme Industrial Technologies Pvt Ltd</div>
+          <div>Plot 102, Sector 8, MIDC, Industrial Area</div>
+          <div>Navi Mumbai, Maharashtra - 400705</div>
+          <div><strong>Email:</strong> accounts@acmeindustrial.in</div>
+          <div><strong>Phone:</strong> +91 22 2789 1234</div>
+        </td>
+      </tr>
+    </table>
+
+    <!-- Items Table -->
+    <table class="items-table">
+      <thead>
+        <tr>
+          <th style="width: 5%;" class="text-center">#</th>
+          <th style="width: 32%;">Item Description</th>
+          <th style="width: 10%;">HSN/SAC</th>
+          <th style="width: 8%;" class="text-right">Qty</th>
+          <th style="width: 12%;" class="text-right">Unit Price</th>
+          <th style="width: 11%;" class="text-right">Taxable</th>
+          <th style="width: 10%;" class="text-right">GST</th>
+          <th style="width: 12%;" class="text-right">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td class="text-center">1</td>
+          <td>High Precision CNC Lathe Tool Holder ISO 40</td>
+          <td>8207</td>
+          <td class="text-right">10 PCS</td>
+          <td class="text-right">₹ 4,500.00</td>
+          <td class="text-right">₹ 45,000.00</td>
+          <td class="text-right">
+            
+            
+            IGST: 18%
+          </td>
+          <td class="text-right" style="font-weight: 600;">₹ 53,100.00</td>
+        </tr>
+        <tr>
+          <td class="text-center">2</td>
+          <td>Tungsten Carbide Milling Inserts (Pack of 10)</td>
+          <td>8209</td>
+          <td class="text-right">5 PACK</td>
+          <td class="text-right">₹ 2,200.00</td>
+          <td class="text-right">₹ 11,000.00</td>
+          <td class="text-right">
+            
+            
+            IGST: 18%
+          </td>
+          <td class="text-right" style="font-weight: 600;">₹ 12,980.00</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <!-- Totals Summary -->
+    <div class="summary-container">
+      <table class="summary-table">
+        <tr>
+          <td><strong>Subtotal:</strong></td>
+          <td class="text-right">₹ 56,000.00</td>
+        </tr>
+        <tr>
+          <td>Total IGST:</td>
+          <td class="text-right">₹ 10,080.00</td>
+        </tr>
+        <tr class="grand-total-row">
+          <td>Grand Total:</td>
+          <td class="text-right">₹ 66,080.00</td>
+        </tr>
+      </table>
+    </div>
+
+    <div style="margin-bottom: 12px; font-size: 11px; background-color: #f7fafc; padding: 6px 8px; border-left: 3px solid #2b6cb0;">
+      <strong>Amount in Words:</strong> Sixty Six Thousand Eighty Rupees Only
+    </div>
+
+    <!-- Footer / Terms & Bank Details -->
+    <div class="footer-section">
+      <table style="width: 100%;">
+        <tr>
+          <td style="width: 60%; vertical-align: top; padding-right: 15px;">
+            <div class="bank-details">
+              <strong>Bank Details:</strong><br>
+              Bank: State Bank of India<br>
+              A/C No: 30012345678<br>
+              IFSC: SBIN0001234 | Branch: Vashi Industrial Branch
+            </div>
+            <div style="margin-top: 6px;">
+              <strong>Terms & Conditions:</strong><br>
+              <span style="white-space: pre-line;">1. Interest @ 18% per annum will be charged if payment is delayed beyond due date.
+2. Subject to Navi Mumbai jurisdiction.</span>
+            </div>
+          </td>
+          <td style="width: 40%; vertical-align: top; text-align: right;">
+            <div style="font-weight: 700; color: #2d3748;">For Acme Industrial Technologies Pvt Ltd</div>
+            <div class="signature-box">
+              <div class="signature-line">Authorized Signatory</div>
+            </div>
+          </td>
+        </tr>
+      </table>
+      <div style="margin-top: 15px; text-align: center; font-size: 9px; color: #a0aec0; border-top: 1px solid #edf2f7; padding-top: 6px;">
+        This is a computer generated invoice. Generated via TranZact PDF Microservice.
+      </div>
+    </div>
+  </div>
+</body>
+</html>
