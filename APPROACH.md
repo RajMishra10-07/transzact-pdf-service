@@ -380,6 +380,12 @@ On a 4 GB RAM instance (`t4g.medium`), the system operates with **1.55 GB (38.7%
 > *Public links of conversations you had with AI.*
 
 ### 🔗 Verified Real AI Conversation Links
+
+#### 🌐 Public Web Browser Links (External Evaluator Review)
+- **Full Verbatim Chat History (Web View)**: [https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/CHAT_HISTORY.md](https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/CHAT_HISTORY.md)
+- **Technical Defense & Approach Document (Web View)**: [https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/APPROACH.md](https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/APPROACH.md)
+
+#### 💻 Local Antigravity IDE & Raw Transcript Links
 - **Session 1 (Inception, Architecture & Core Implementation)**:  
   💻 **Antigravity IDE Link**: [conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340](conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340)  
   📄 **Local Raw Transcript**: [`file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl`](file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl)

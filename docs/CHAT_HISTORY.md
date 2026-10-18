@@ -8,12 +8,19 @@
 > **Time Span**: October 16, 2026 – October 18, 2026  
 > 
 > ### 🔗 Verified Real AI Conversation Links:
+> 
+> #### 🌐 Public Web Browser Links (External Evaluator Review)
+> - **Full Verbatim Chat History (Web View)**: [https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/CHAT_HISTORY.md](https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/CHAT_HISTORY.md)
+> - **Technical Defense & Approach Document (Web View)**: [https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/APPROACH.md](https://github.com/RajMishra10-07/transzact-pdf-service/blob/review-fixes/APPROACH.md)
+> 
+> #### 💻 Local Antigravity IDE & Raw Transcript Links
 > - **Session 1 (Inception, Architecture & Core Implementation)**:  
 >   💻 **Antigravity IDE Link**: [conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340](conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340)  
 >   📄 **Local Raw Transcript**: [`file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl`](file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl)  
 > - **Session 2 & 3 (UI Studio, Review Fixes, Security Hardening & Concurrency Guard)**:  
 >   💻 **Antigravity IDE Link**: [conversation://f636048c-6196-4684-948b-8c36c11aa324](conversation://f636048c-6196-4684-948b-8c36c11aa324)  
 >   📄 **Local Raw Transcript**: [`file:///C:/Users/Raj/.gemini/antigravity/brain/f636048c-6196-4684-948b-8c36c11aa324/.system_generated/logs/transcript.jsonl`](file:///C:/Users/Raj/.gemini/antigravity/brain/f636048c-6196-4684-948b-8c36c11aa324/.system_generated/logs/transcript.jsonl)
+
 
 ---
 
