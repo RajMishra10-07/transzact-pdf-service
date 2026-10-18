@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from 'express';
 import { generateUuid } from '../../utils/ids.js';
-import { logger } from '../../utils/logger.js';
+import { logger, sanitizeUrl } from '../../utils/logger.js';
 import { metricsService } from '../../services/metrics-service.js';
 
 export function requestLoggerMiddleware(req: Request, res: Response, next: NextFunction): void {
@@ -21,7 +21,7 @@ export function requestLoggerMiddleware(req: Request, res: Response, next: NextF
         {
           correlationId,
           method: req.method,
-          path: req.originalUrl,
+          path: sanitizeUrl(req.originalUrl),
           statusCode: res.statusCode,
           durationMs,
         },

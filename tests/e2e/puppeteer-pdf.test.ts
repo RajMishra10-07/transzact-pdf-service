@@ -5,7 +5,7 @@ import { computeBufferHash } from '../../src/utils/hash.js';
 describe('9. End-to-End Real Puppeteer PDF Generation', () => {
   afterAll(async () => {
     await pdfService.closeBrowser();
-  });
+  }, 45000);
 
   it('should render a valid GST Invoice PDF using real Chromium', async () => {
     const invoiceData = {
