@@ -379,6 +379,14 @@ On a 4 GB RAM instance (`t4g.medium`), the system operates with **1.55 GB (38.7%
 ## 5. AI Usage Log
 > *Public links of conversations you had with AI.*
 
+### 🔗 Verified Real AI Conversation Links
+- **Session 1 (Inception, Architecture & Core Implementation)**:  
+  💻 **Antigravity IDE Link**: [conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340](conversation://678b4ebf-1be3-4fd9-a330-d9392ad72340)  
+  📄 **Local Raw Transcript**: [`file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl`](file:///C:/Users/Raj/.gemini/antigravity/brain/678b4ebf-1be3-4fd9-a330-d9392ad72340/.system_generated/logs/transcript.jsonl)
+- **Session 2 & 3 (UI Studio, Review Fixes, Security Hardening & Concurrency Guard)**:  
+  💻 **Antigravity IDE Link**: [conversation://f636048c-6196-4684-948b-8c36c11aa324](conversation://f636048c-6196-4684-948b-8c36c11aa324)  
+  📄 **Local Raw Transcript**: [`file:///C:/Users/Raj/.gemini/antigravity/brain/f636048c-6196-4684-948b-8c36c11aa324/.system_generated/logs/transcript.jsonl`](file:///C:/Users/Raj/.gemini/antigravity/brain/f636048c-6196-4684-948b-8c36c11aa324/.system_generated/logs/transcript.jsonl)
+
 > **Full Unedited Chat Transcripts**: The complete, verbatim conversational history containing every user prompt, architectural plan, code generation step, review report, and test execution is compiled in [CHAT_HISTORY.md](file:///c:/Users/Raj/OneDrive/Desktop/transzact-project/CHAT_HISTORY.md) (and [docs/CHAT_HISTORY.md](file:///c:/Users/Raj/OneDrive/Desktop/transzact-project/docs/CHAT_HISTORY.md)).
 
 ### 5.1 Chronological User Prompts Overview
